@@ -1,0 +1,8 @@
+# Not part of the website: keep these off the public site
+supabase/
+README.md
+serve.ps1
+netlify.toml
+*.bak
+Start PROVIDETECH.bat
+*.bat

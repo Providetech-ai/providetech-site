@@ -1,0 +1,8 @@
+{
+  "name": "providetech-site",
+  "private": true,
+  "description": "PROVIDETECH AI ASSISTANCE website, checkout and /admin",
+  "scripts": {
+    "preview": "npx --yes serve@14 . -l 3000"
+  }
+}
