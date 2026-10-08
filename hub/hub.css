@@ -269,3 +269,4 @@ a.chip{color:var(--ink)}a.chip:hover{border-color:var(--line-strong);color:var(-
 .pblock pre{margin:0;white-space:pre-wrap;font:14px/1.6 var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;padding-right:86px}
 .pblock button{position:absolute;top:8px;right:8px}
 @media (max-width:900px){ .pblock pre{padding-right:16px;padding-top:48px} }
+.kits-link{display:flex;align-items:center;gap:14px;margin-top:16px;color:inherit;padding:16px 18px}.kits-link:hover{border-color:var(--line-strong);color:inherit}.kits-link .ic{width:42px;height:42px;border-radius:12px;background:var(--blue-50);color:var(--blue-ink);display:grid;place-items:center;flex-shrink:0}.kits-link b{display:block}.kits-link small{display:block;font-size:13px;margin-top:2px}.kits-link .go{margin-left:auto;font-size:20px;color:var(--blue-ink)}

@@ -717,7 +717,7 @@
       '<div class="span2">' + field(lbl("ltitle", "Lesson title"), '<input class="input" id="ltitle" name="title" required value="' + esc(l.title) + '">') + "</div>" +
       field(lbl("ldur", "Reading time (minutes)"), '<input class="input" id="ldur" name="duration_min" type="number" min="0" step="1" value="' + esc(l.duration_min) + '">', "Leave empty to work it out automatically.") +
       field(lbl("lsort", "Order"), '<input class="input" id="lsort" name="sort" type="number" step="1" value="' + esc(l.sort) + '">') +
-      '<div class="span2">' + field(lbl("ldesc", "Lesson content"), '<textarea class="input" id="ldesc" name="description" rows="16" maxlength="8000" style="font-family:var(--mono);font-size:13px;line-height:1.55" placeholder="Write the lesson here.">' + esc(l.description) + "</textarea>",
+      '<div class="span2">' + field(lbl("ldesc", "Lesson content"), '<textarea class="input" id="ldesc" name="description" rows="16" maxlength="40000" style="font-family:var(--mono);font-size:13px;line-height:1.55" placeholder="Write the lesson here.">' + esc(l.description) + "</textarea>",
         "Formatting: ## Heading · ### Smaller heading · - bullet · 1. step · **bold** · > Try it box · [link text](https://…) for templates or downloads · put an example prompt between two ``` lines to give it a Copy button.") + "</div>" + pubField(l) + "</div>",
       { submit: l.id ? "Save lesson" : "Add lesson", onSubmit: function (f) {
         if (f.title.trim().length < 2) throw new Error("Give the lesson a title.");

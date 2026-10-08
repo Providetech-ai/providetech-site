@@ -423,7 +423,7 @@ create table if not exists public.lessons (
   id uuid primary key default gen_random_uuid(),
   course_id uuid not null references public.courses (id) on delete cascade,
   title text not null check (char_length(title) between 2 and 160),
-  description text not null default '' check (char_length(description) <= 8000),
+  description text not null default '' check (char_length(description) <= 40000),
   video_url text not null default '' check (video_url = '' or video_url ~ '^https://'),
   duration_min int not null default 0 check (duration_min between 0 and 1440),
   sort int not null default 0,
@@ -698,3 +698,7 @@ end;
 $$;
 revoke all on function public.hub_points_all() from public, anon;
 grant execute on function public.hub_points_all() to authenticated;
+
+-- Written lessons can be long (full SPEC.md starters)
+alter table public.lessons drop constraint if exists lessons_description_check;
+alter table public.lessons add constraint lessons_description_check check (char_length(description) <= 40000);

@@ -504,7 +504,7 @@
   var CAT_ORDER = ["Marketing", "Sales", "Customer service", "Operations", "Content", "Coding with AI"];
   function viewPrompts() {
     var ps = C().prompts;
-    var head = '<header class="page-head"><h1>Prompt Library</h1><p>Copy-ready prompts for real business tasks. Replace the parts in [BRACKETS] with your own details.</p></header>';
+    var head = '<header class="page-head"><h1>Prompt Library</h1><p>Copy-ready prompts for real business tasks. Replace the parts in [BRACKETS] with your own details.</p>' + (function () { var k = C().courses.filter(function (c) { return /build kits/i.test(c.title); })[0]; return k ? '<a class="card kits-link" href="#/learning/' + esc(k.id) + '"><span class="ic">' + ic("pack", 20) + '</span><span><b>Building a whole system?</b><small class="muted">Get the 10 starter prompts and full SPEC.md master prompts (Inventory, Online Store, Booking, HR, KPI Dashboard, CRM) in Build Kits.</small></span><span class="go">→</span></a>' : ""; })() + '</header>';
     if (!ps.length) return head + emptyState("prompt", "The library is being filled", "Prompts will appear here soon. Your membership already includes them.");
     var cats = ps.map(function (p) { return p.category; }).filter(function (c, i, a) { return a.indexOf(c) === i; })
       .sort(function (a, b) { var ia = CAT_ORDER.indexOf(a), ib = CAT_ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || (a < b ? -1 : 1); });
