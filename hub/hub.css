@@ -293,3 +293,9 @@ a.chip{color:var(--ink)}a.chip:hover{border-color:var(--line-strong);color:var(-
   .lnav-h,.lnav-i{display:none}
 }
 .howto{display:flex;flex-wrap:wrap;gap:8px 22px;margin:12px 0 0;padding:12px 16px 12px 34px;background:var(--blue-50);border-radius:12px;font-size:14px;color:var(--ink-2)}.howto li{padding-left:2px}.howto b{color:var(--ink)}
+/* language picker (English / Tagalog / Bisaya) */
+.stats{align-items:center}
+.langsel{display:inline-flex}
+.langsel select.input{width:auto;min-height:0;height:32px;padding:0 30px 0 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--ink-2);background-color:var(--white);cursor:pointer}
+.auth{position:relative}
+.auth-lang{position:absolute;top:16px;right:16px}

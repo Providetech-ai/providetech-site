@@ -9,25 +9,38 @@
   var app = document.getElementById("app");
   var sb = null, S = { user: null, member: null, menu: false, c: null, pq: "", pcat: "", feed: {}, posts: {}, lb: {}, lbp: "month", draft: "", cdraft: {}, editing: null, confirm: null, channels: null };
 
+  /* ---------- language (English / Tagalog / Bisaya), shared with the main website ---------- */
+  var LANGS = [["en", "English"], ["tl", "Tagalog"], ["ceb", "Bisaya"]];
+  var LANG = "en"; try { var sl = localStorage.getItem("pt-lang"); if (sl === "tl" || sl === "ceb") LANG = sl; } catch (e) {}
+  document.documentElement.setAttribute("lang", LANG);
+  function T(s, v) {
+    var d = (window.PT_I18N || {})[LANG], r = (d && d[s]) || s;
+    if (v) r = r.replace(/\{(\w+)\}/g, function (m, k) { return k in v ? v[k] : m; });
+    return r;
+  }
+  function LOC() { return LANG === "tl" ? "fil-PH" : "en-PH"; }
+  function setLang(l) { LANG = l; try { localStorage.setItem("pt-lang", l); } catch (e) {} document.documentElement.setAttribute("lang", l); S.keepScroll = true; render(); }
+  function langPicker() { return '<label class="langsel"><span class="sr-only">Language</span><select id="hub-lang" class="input" aria-label="Language / Wika / Pinulongan">' + LANGS.map(function (l) { return '<option value="' + l[0] + '"' + (l[0] === LANG ? " selected" : "") + ">" + l[1] + "</option>"; }).join("") + "</select></label>"; }
+
   /* ---------- helpers ---------- */
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function initials(n) { var p = String(n || "?").trim().split(/\s+/); return ((p[0] || "")[0] || "?").toUpperCase() + ((p[1] || "")[0] || "").toUpperCase(); }
-  function first(n) { return String(n || "").trim().split(/\s+/)[0] || "there"; }
-  function fmtDate(iso) { try { return new Date(iso).toLocaleDateString("en-PH", { day: "numeric", month: "long", year: "numeric" }); } catch (e) { return iso; } }
+  function first(n) { return String(n || "").trim().split(/\s+/)[0] || T("there"); }
+  function fmtDate(iso) { try { return new Date(iso).toLocaleDateString(LOC(), { day: "numeric", month: "long", year: "numeric" }); } catch (e) { return iso; } }
   var LEVELS = [[0, "Starter"], [50, "Builder"], [150, "Maker"], [300, "Pro"], [600, "Expert"], [1000, "Legend"]];
   function lvlIdx(p) { p = Number(p) || 0; var i = 0; LEVELS.forEach(function (l, k) { if (p >= l[0]) i = k; }); return i; }
   function level(p) { return lvlIdx(p) + 1; }
   function levelName(p) { return LEVELS[lvlIdx(p)][1]; }
   function ago(iso) {
     var s = (Date.now() - new Date(iso).getTime()) / 1000;
-    if (s < 60) return "just now"; if (s < 3600) return Math.floor(s / 60) + "m ago"; if (s < 86400) return Math.floor(s / 3600) + "h ago"; if (s < 7 * 86400) return Math.floor(s / 86400) + "d ago";
-    try { return new Date(iso).toLocaleDateString("en-PH", { day: "numeric", month: "short" }); } catch (e) { return ""; }
+    if (s < 60) return T("just now"); if (s < 3600) return T("{n}m ago", { n: Math.floor(s / 60) }); if (s < 86400) return T("{n}h ago", { n: Math.floor(s / 3600) }); if (s < 7 * 86400) return T("{n}d ago", { n: Math.floor(s / 86400) });
+    try { return new Date(iso).toLocaleDateString(LOC(), { day: "numeric", month: "short" }); } catch (e) { return ""; }
   }
   function friendly(e) {
     var m = String(e && (e.message || e.code) || "");
-    if (/SLOW_DOWN/.test(m)) return "You've posted a lot today. Take a short break and try again later.";
-    if (/row-level|permission|FORBIDDEN/i.test(m)) return "You can't do that here.";
-    return m && !/^DB$/.test(m) && m.length < 140 ? m : "Something went wrong. Please try again.";
+    if (/SLOW_DOWN/.test(m)) return T("You've posted a lot today. Take a short break and try again later.");
+    if (/row-level|permission|FORBIDDEN/i.test(m)) return T("You can't do that here.");
+    return m && !/^DB$/.test(m) && m.length < 140 ? m : T("Something went wrong. Please try again.");
   }
   function fail(code, msg) { var e = new Error(msg || code); e.code = code; return e; }
   function videoEmbed(url) {
@@ -39,7 +52,7 @@
   }
   function player(url, title) {
     var src = videoEmbed(url);
-    if (!src) return '<div class="video empty-video">Video coming soon</div>';
+    if (!src) return '<div class="video empty-video">' + T("Video coming soon") + '</div>';
     return '<div class="video"><iframe src="' + esc(src + (src.indexOf("?") > 0 ? "&" : "?") + (src.indexOf("vimeo") > 0 ? "dnt=1&title=0&byline=0&portrait=0" : "rel=0")) + '" title="' + esc(title) + '" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
   }
   function mins(n) { n = Number(n) || 0; return n ? (n >= 60 ? Math.floor(n / 60) + "h" + (n % 60 ? " " + (n % 60) + "m" : "") : n + " min") : ""; }
@@ -62,7 +75,7 @@
         var buf = []; i++;
         while (i < lines.length && !/^```/.test(lines[i])) buf.push(lines[i++]);
         i++;
-        out.push('<div class="pblock"><button class="btn btn-g btn-sm" data-act="copy-block">Copy</button><pre>' + esc(buf.join("\n")) + "</pre></div>");
+        out.push('<div class="pblock"><button class="btn btn-g btn-sm" data-act="copy-block">' + T("Copy") + '</button><pre>' + esc(buf.join("\n")) + "</pre></div>");
         continue;
       }
       if (!ln.trim()) { i++; continue; }
@@ -93,7 +106,7 @@
     }
     return out.join("");
   }
-  function readTime(n) { n = Number(n) || 0; return n ? n + " min read" : ""; }
+  function readTime(n) { n = Number(n) || 0; return n ? T("{n} min read", { n: n }) : ""; }
   function C() { return S.c || { courses: [], lessons: [], replays: [], prompts: [], done: {} }; }
   function lessonsOf(cid) { return C().lessons.filter(function (l) { return l.course_id === cid; }); }
   function progress(cid) { var ls = lessonsOf(cid), d = ls.filter(function (l) { return C().done[l.id]; }).length; return { done: d, total: ls.length, pct: ls.length ? Math.round(d / ls.length * 100) : 0 }; }
@@ -145,7 +158,7 @@
     return new Promise(function (res, rej) {
       function make() { try { sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { storageKey: "pt-hub-auth", persistSession: true, autoRefreshToken: true } }); res(); } catch (e) { rej(e); } }
       if (window.supabase && window.supabase.createClient) return make();
-      var s = document.createElement("script"); s.src = CDN; s.onload = make; s.onerror = function () { rej(fail("NETWORK", "Couldn't connect. Check your internet and refresh.")); };
+      var s = document.createElement("script"); s.src = CDN; s.onload = make; s.onerror = function () { rej(fail("NETWORK", T("Couldn't connect. Check your internet and refresh."))); };
       document.head.appendChild(s);
     });
   }
@@ -154,7 +167,7 @@
       if (!res.error) return res.data;
       var ctx = res.error.context;
       var p = ctx && typeof ctx.json === "function" ? ctx.json().catch(function () { return null; }) : Promise.resolve(null);
-      return p.then(function (j) { throw fail((j && j.error) || "NETWORK", (j && j.message) || "Something went wrong. Please try again."); });
+      return p.then(function (j) { throw fail((j && j.error) || "NETWORK", (j && j.message) || T("Something went wrong. Please try again.")); });
     });
   }
   var DEMO_CONTENT = {
@@ -247,7 +260,7 @@
     },
     signIn: function (email, pw) {
       return sb.auth.signInWithPassword({ email: String(email).trim().toLowerCase(), password: pw }).then(function (r) {
-        if (r.error) throw fail("AUTH", "That email and password don't match. If you haven't set a password yet, use the link in your access email.");
+        if (r.error) throw fail("AUTH", T("That email and password don't match. If you haven't set a password yet, use the link in your access email."));
         return api.session();
       });
     },
@@ -308,7 +321,7 @@
     signIn: function (email, pw) {
       var em = String(email).trim().toLowerCase();
       if ((em === DEMO_MEMBER.email || em === "team@providetech.demo") && pw === "demo1234") { try { sessionStorage.setItem("pt-hub-demo", em === DEMO_MEMBER.email ? "1" : "team"); } catch (e) {} return api.session(); }
-      return Promise.reject(fail("AUTH", "Demo mode: sign in with member@providetech.demo and demo1234."));
+      return Promise.reject(fail("AUTH", T("Demo mode: sign in with member@providetech.demo and demo1234.")));
     },
     signOut: function () { try { sessionStorage.removeItem("pt-hub-demo"); } catch (e) {} return Promise.resolve(); },
     content: function () { var done = {}; try { done = JSON.parse(localStorage.getItem("pt-hub-demo-done") || "{}"); } catch (e) {} var c = JSON.parse(JSON.stringify(DEMO_CONTENT)); c.done = done; return Promise.resolve(c); },
@@ -357,64 +370,64 @@
   /* ---------- auth screens ---------- */
   var brand = '<a class="brand" href="/" aria-label="PROVIDETECH home"><img src="/assets/logo-mark.png" alt=""><img class="word" src="/assets/logo-word.png" alt="PROVIDETECH AI Assistance"></a>';
   function pwField(id, label, auto, hint) {
-    return '<div class="field"><label for="' + id + '">' + esc(label) + '</label><div class="pw"><input class="input" id="' + id + '" name="' + id + '" type="password" autocomplete="' + auto + '" required><button type="button" data-show="' + id + '" aria-label="Show password">Show</button></div>' + (hint ? "<small>" + esc(hint) + "</small>" : "") + "</div>";
+    return '<div class="field"><label for="' + id + '">' + esc(label) + '</label><div class="pw"><input class="input" id="' + id + '" name="' + id + '" type="password" autocomplete="' + auto + '" required><button type="button" data-show="' + id + '" aria-label="' + T("Show password") + '">' + T("Show") + '</button></div>' + (hint ? "<small>" + esc(hint) + "</small>" : "") + "</div>";
   }
   function bindShow(root) {
     [].forEach.call(root.querySelectorAll("[data-show]"), function (b) {
-      b.addEventListener("click", function () { var i = document.getElementById(b.getAttribute("data-show")); var show = i.type === "password"; i.type = show ? "text" : "password"; b.textContent = show ? "Hide" : "Show"; b.setAttribute("aria-label", show ? "Hide password" : "Show password"); });
+      b.addEventListener("click", function () { var i = document.getElementById(b.getAttribute("data-show")); var show = i.type === "password"; i.type = show ? "text" : "password"; b.textContent = show ? T("Hide") : T("Show"); b.setAttribute("aria-label", show ? T("Hide password") : T("Show password")); });
     });
   }
-  function authPage(inner) { app.innerHTML = '<main class="auth"><div class="auth-card">' + brand + inner + "</div></main>"; bindShow(app); var f = app.querySelector("input"); if (f) f.focus(); }
+  function authPage(inner) { app.innerHTML = '<main class="auth"><div class="auth-lang">' + langPicker() + '</div><div class="auth-card">' + brand + inner + "</div></main>"; bindShow(app); var f = app.querySelector("input"); if (f) f.focus(); }
   function busy(form, on) { var b = form.querySelector("button[type=submit]"); if (b) { b.disabled = on; b.setAttribute("aria-busy", on ? "true" : "false"); } }
   function showErr(form, msg) { var e = form.querySelector(".form-error"); e.textContent = msg; e.hidden = !msg; }
 
   function renderLogin(msg) {
-    authPage('<div><h1>Builder Hub sign in</h1><p class="sub">Welcome back. Use the email you paid with.</p></div>' +
+    authPage('<div><h1>' + T("Builder Hub sign in") + '</h1><p class="sub">' + T("Welcome back. Use the email you paid with.") + '</p></div>' +
       (LIVE ? "" : '<p class="form-ok">Demo mode: sign in with <b>member@providetech.demo</b> and <b>demo1234</b>. To try moderation, use <b>team@providetech.demo</b>.</p>') +
       (msg ? '<p class="form-ok">' + esc(msg) + "</p>" : "") +
-      '<form id="f" class="field" style="gap:16px" novalidate><div class="field"><label for="em">Email</label><input class="input" id="em" type="email" autocomplete="username" required' + (LIVE ? "" : ' value="member@providetech.demo"') + "></div>" +
-      pwField("pw", "Password", "current-password") +
-      '<p class="form-error" role="alert" hidden></p><button class="btn btn-p" type="submit">Sign in</button></form>' +
-      '<div class="auth-links"><a href="#/forgot">Forgot password?</a><a href="/">← Back to website</a></div>' +
-      '<p class="spam-tip">Waiting for your access email? In Gmail, check <b>Spam</b> and the <b>Promotions</b> tab, or search for <b>PROVIDETECH</b>. If it\'s in Spam, open it and tap <b>Report not spam</b>.</p>');
+      '<form id="f" class="field" style="gap:16px" novalidate><div class="field"><label for="em">' + T("Email") + '</label><input class="input" id="em" type="email" autocomplete="username" required' + (LIVE ? "" : ' value="member@providetech.demo"') + "></div>" +
+      pwField("pw", T("Password"), "current-password") +
+      '<p class="form-error" role="alert" hidden></p><button class="btn btn-p" type="submit">' + T("Sign in") + '</button></form>' +
+      '<div class="auth-links"><a href="#/forgot">' + T("Forgot password?") + '</a><a href="/">' + T("← Back to website") + '</a></div>' +
+      '<p class="spam-tip">' + T("Waiting for your access email? In Gmail, check <b>Spam</b> and the <b>Promotions</b> tab, or search for <b>PROVIDETECH</b>. If it's in Spam, open it and tap <b>Report not spam</b>.") + '</p>');
     var f = document.getElementById("f");
     f.addEventListener("submit", function (e) {
       e.preventDefault();
       var em = document.getElementById("em").value, pw = document.getElementById("pw").value;
-      if (!em || !pw) return showErr(f, "Enter your email and password.");
+      if (!em || !pw) return showErr(f, T("Enter your email and password."));
       busy(f, true); showErr(f, "");
       api.signIn(em, pw).then(function (s) { busy(f, false); setSession(s); S.c = null; go(""); }, function (er) { busy(f, false); showErr(f, er.message); });
     });
   }
   function renderForgot() {
-    authPage('<div><h1>Reset your password</h1><p class="sub">Enter the email you paid with. If it has Builder Hub access, we\'ll email you a reset link that works for 1 hour.</p></div>' +
-      '<form id="f" class="field" style="gap:16px" novalidate><div class="field"><label for="em">Email</label><input class="input" id="em" type="email" autocomplete="email" required></div>' +
-      '<p class="form-error" role="alert" hidden></p><button class="btn btn-p" type="submit">Email me a reset link</button></form>' +
-      '<div class="auth-links"><a href="#/login">← Back to sign in</a></div>');
+    authPage('<div><h1>' + T("Reset your password") + '</h1><p class="sub">' + T("Enter the email you paid with. If it has Builder Hub access, we'll email you a reset link that works for 1 hour.") + '</p></div>' +
+      '<form id="f" class="field" style="gap:16px" novalidate><div class="field"><label for="em">' + T("Email") + '</label><input class="input" id="em" type="email" autocomplete="email" required></div>' +
+      '<p class="form-error" role="alert" hidden></p><button class="btn btn-p" type="submit">' + T("Email me a reset link") + '</button></form>' +
+      '<div class="auth-links"><a href="#/login">' + T("← Back to sign in") + '</a></div>');
     var f = document.getElementById("f");
     f.addEventListener("submit", function (e) {
       e.preventDefault();
       var em = document.getElementById("em").value.trim();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) return showErr(f, "Enter a valid email address.");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) return showErr(f, T("Enter a valid email address."));
       busy(f, true); showErr(f, "");
       api.forgot(em).then(function () {
-        f.outerHTML = '<p class="form-ok">Check your inbox. If <b>' + esc(em) + "</b> has Builder Hub access, a reset link is on its way. Look in Spam or Promotions too.</p>";
+        f.outerHTML = '<p class="form-ok">' + T("Check your inbox. If <b>{email}</b> has Builder Hub access, a reset link is on its way. Look in Spam or Promotions too.", { email: esc(em) }) + "</p>";
       }, function (er) { busy(f, false); showErr(f, er.message); });
     });
   }
   function renderSetPassword(token) {
-    authPage('<div><h1>Set your password</h1><p class="sub">Checking your link…</p></div>');
-    if (!token) return authPage('<div><h1>Link missing</h1><p class="sub">Open the button in your access email again, or ask for a new link.</p></div><a class="btn btn-p" href="#/forgot">Send me a new link</a>');
+    authPage('<div><h1>' + T("Set your password") + '</h1><p class="sub">' + T("Checking your link…") + '</p></div>');
+    if (!token) return authPage('<div><h1>' + T("Link missing") + '</h1><p class="sub">' + T("Open the button in your access email again, or ask for a new link.") + '</p></div><a class="btn btn-p" href="#/forgot">' + T("Send me a new link") + '</a>');
     api.checkToken(token).then(function (t) {
-      authPage('<div><h1>' + (t.purpose === "reset" ? "Choose a new password" : "Set your password") + '</h1><p class="sub">For <b>' + esc(t.email) + "</b>. You'll use this to sign in to the Builder Hub.</p></div>" +
-        '<form id="f" class="field" style="gap:16px" novalidate>' + pwField("pw", "New password", "new-password", "At least 8 characters.") + pwField("pw2", "Type it again", "new-password") +
-        '<p class="form-error" role="alert" hidden></p><button class="btn btn-p" type="submit">Save password and enter</button></form>');
+      authPage('<div><h1>' + (t.purpose === "reset" ? T("Choose a new password") : T("Set your password")) + '</h1><p class="sub">' + T("For <b>{email}</b>. You'll use this to sign in to the Builder Hub.", { email: esc(t.email) }) + "</p></div>" +
+        '<form id="f" class="field" style="gap:16px" novalidate>' + pwField("pw", T("New password"), "new-password", T("At least 8 characters.")) + pwField("pw2", T("Type it again"), "new-password") +
+        '<p class="form-error" role="alert" hidden></p><button class="btn btn-p" type="submit">' + T("Save password and enter") + '</button></form>');
       var f = document.getElementById("f");
       f.addEventListener("submit", function (e) {
         e.preventDefault();
         var a = document.getElementById("pw").value, b = document.getElementById("pw2").value;
-        if (a.length < 8) return showErr(f, "Use at least 8 characters.");
-        if (a !== b) return showErr(f, "The two passwords don't match.");
+        if (a.length < 8) return showErr(f, T("Use at least 8 characters."));
+        if (a !== b) return showErr(f, T("The two passwords don't match."));
         busy(f, true); showErr(f, "");
         api.setPassword(token, a).then(function (r) {
           history.replaceState(null, "", location.pathname + "#/login");
@@ -422,7 +435,7 @@
         }).catch(function (er) { busy(f, false); showErr(f, er.message); });
       });
     }, function (er) {
-      authPage('<div><h1>This link has expired</h1><p class="sub">' + esc(er.message) + '</p></div><a class="btn btn-p" href="#/forgot">Send me a new link</a><div class="auth-links"><a href="#/login">← Back to sign in</a></div>');
+      authPage('<div><h1>' + T("This link has expired") + '</h1><p class="sub">' + esc(er.message) + '</p></div><a class="btn btn-p" href="#/forgot">' + T("Send me a new link") + '</a><div class="auth-links"><a href="#/login">' + T("← Back to sign in") + '</a></div>');
     });
   }
 
@@ -436,41 +449,41 @@
   function shell(path, content) {
     var m = S.member || {};
     var nav = NAV.map(function (n) {
-      return '<a href="#/' + n[0] + '"' + (path === n[0] ? ' aria-current="page"' : "") + (n[3] ? ' class="is-soon"' : "") + ">" + ic(n[1]) + "<span>" + esc(n[2]) + "</span>" + (n[3] ? '<span class="pill soon">Soon</span>' : "") + "</a>";
+      return '<a href="#/' + n[0] + '"' + (path === n[0] ? ' aria-current="page"' : "") + (n[3] ? ' class="is-soon"' : "") + ">" + ic(n[1]) + "<span>" + esc(T(n[2])) + "</span>" + (n[3] ? '<span class="pill soon">' + T("Soon") + "</span>" : "") + "</a>";
     }).join("");
-    var title = (NAV.filter(function (n) { return n[0] === path; })[0] || NAV[0])[2];
+    var title = T((NAV.filter(function (n) { return n[0] === path; })[0] || NAV[0])[2]);
     return '<div class="shell' + (S.menu ? " open" : "") + '"><aside class="side" aria-label="Hub menu">' + brand +
-      '<div class="side-title"><b>Builder Hub</b><span>Member workspace</span></div><nav class="nav">' + nav + "</nav>" +
-      '<div class="me"><span class="av">' + esc(initials(m.name || m.email)) + '</span><span style="min-width:0"><b>' + esc(m.name || first(m.email)) + "</b><small>" + (m.team ? "Team account" : "Lv " + level(m.points) + " · " + (m.points || 0) + " pts") + '</small></span><button class="out" data-act="signout">Sign out</button></div></aside>' +
-      '<div class="scrim" data-act="menu"></div><main class="main"><div class="top"><button class="menu-btn" data-act="menu" aria-label="Open menu">' + ic("menu") + '</button><span class="crumb">Builder Hub / <b>' + esc(title) + '</b></span><span class="stats">' + (m.team ? '<span class="chip">Team</span>' : '<a class="chip" href="#/leaderboard"><b>' + (m.points || 0) + '</b> pts</a><span class="chip">Lv <b>' + level(m.points) + "</b>&nbsp;" + esc(levelName(m.points)) + "</span>") + '<a class="chip" href="/">Main website ↗</a></span></div>' + content + "</main></div>";
+      '<div class="side-title"><b>Builder Hub</b><span>' + T("Member workspace") + '</span></div><nav class="nav">' + nav + "</nav>" +
+      '<div class="me"><span class="av">' + esc(initials(m.name || m.email)) + '</span><span style="min-width:0"><b>' + esc(m.name || first(m.email)) + "</b><small>" + (m.team ? T("Team account") : "Lv " + level(m.points) + " · " + (m.points || 0) + " pts") + '</small></span><button class="out" data-act="signout">' + T("Sign out") + '</button></div></aside>' +
+      '<div class="scrim" data-act="menu"></div><main class="main"><div class="top"><button class="menu-btn" data-act="menu" aria-label="Open menu">' + ic("menu") + '</button><span class="crumb">Builder Hub / <b>' + esc(title) + '</b></span><span class="stats">' + (m.team ? '<span class="chip">' + T("Team") + '</span>' : '<a class="chip" href="#/leaderboard"><b>' + (m.points || 0) + '</b> pts</a><span class="chip">Lv <b>' + level(m.points) + "</b>&nbsp;" + esc(levelName(m.points)) + "</span>") + '' + langPicker() + '<a class="chip" href="/">' + T("Main website ↗") + '</a></span></div>' + content + "</main></div>";
   }
   function viewHome() {
     var m = S.member;
     var counts = { replays: C().replays.length, learning: C().courses.filter(function (c) { return c.slug !== "prompt-library"; }).length, prompts: C().prompts.length };
-    var unit = { replays: ["replay", "replays"], learning: ["course", "courses"], prompts: ["prompt", "prompts"] };
+    var unit = { replays: ["{n} replay", "{n} replays"], learning: ["{n} course", "{n} courses"], prompts: ["{n} prompt", "{n} prompts"] };
     var tiles = NAV.slice(1, 6).map(function (n) {
       var cnt = counts[n[0]];
-      return '<a class="card tile" href="#/' + n[0] + '"><span class="ic">' + ic(n[1], 20) + "</span><h3>" + esc(n[2]) + "</h3><p>" + esc(PAGES[n[0]][2].split(". ")[0]) + ".</p>" + (cnt ? '<span class="muted" style="font-size:13px">' + cnt + " " + unit[n[0]][cnt === 1 ? 0 : 1] + "</span>" : "") + "</a>";
+      return '<a class="card tile" href="#/' + n[0] + '"><span class="ic">' + ic(n[1], 20) + "</span><h3>" + esc(T(n[2])) + "</h3><p>" + esc(T(PAGES[n[0]][2].split(". ")[0] + ".")) + "</p>" + (cnt ? '<span class="muted" style="font-size:13px">' + esc(T(unit[n[0]][cnt === 1 ? 0 : 1], { n: cnt })) + "</span>" : "") + "</a>";
     }).join("");
     var cont = null;
     C().courses.some(function (c) { var nx = lessonsOf(c.id).filter(function (l) { return !C().done[l.id]; })[0]; if (nx && progress(c.id).done) { cont = { c: c, l: nx }; return true; } return false; });
     if (!cont && C().courses.length) { var c0 = C().courses[0], l0 = lessonsOf(c0.id).filter(function (l) { return !C().done[l.id]; })[0]; if (l0) cont = { c: c0, l: l0 }; }
-    var contCard = cont ? '<a class="card continue" href="' + (cont.c.slug === "prompt-library" ? "#/prompts/" : "#/learning/" + esc(cont.c.id) + "/") + esc(cont.l.id) + '"><span class="ic">' + ic("book", 20) + '</span><span style="min-width:0"><span class="mono-label">' + (progress(cont.c.id).done ? "Continue learning" : "Start here") + "</span><b>" + esc(cont.l.title) + '</b><small class="muted">' + esc(cont.c.title) + " · " + progress(cont.c.id).pct + '% done</small></span><span class="go">→</span></a>' : "";
-    return '<section class="card hero"><span class="mono-label">Member workspace</span><h1>Welcome, ' + esc(first(m.name || m.email)) + ".</h1><p>Your PROVIDETECH Builder Hub: recordings, step-by-step tutorials, prompts and a community of builders. New content is added every month.</p>" +
-      (m.team ? '<span class="until">Signed in as the PROVIDETECH Team</span>' : '<span class="until">Access until ' + esc(fmtDate(m.access_until)) + "</span>") + "</section>" +
+    var contCard = cont ? '<a class="card continue" href="' + (cont.c.slug === "prompt-library" ? "#/prompts/" : "#/learning/" + esc(cont.c.id) + "/") + esc(cont.l.id) + '"><span class="ic">' + ic("book", 20) + '</span><span style="min-width:0"><span class="mono-label">' + (progress(cont.c.id).done ? T("Continue learning") : T("Start here")) + "</span><b>" + esc(cont.l.title) + '</b><small class="muted">' + esc(cont.c.title) + " · " + T("{n}% done", { n: progress(cont.c.id).pct }) + '</small></span><span class="go">→</span></a>' : "";
+    return '<section class="card hero"><span class="mono-label">' + T("Member workspace") + "</span><h1>" + T("Welcome, {name}.", { name: esc(first(m.name || m.email)) }) + "</h1><p>" + T("Your PROVIDETECH Builder Hub: recordings, step-by-step tutorials, prompts and a community of builders. New content is added every month.") + "</p>" +
+      (m.team ? '<span class="until">' + T("Signed in as the PROVIDETECH Team") + "</span>" : '<span class="until">' + T("Access until {date}", { date: esc(fmtDate(m.access_until)) }) + "</span>") + "</section>" +
       contCard + '<div class="grid cols3">' + tiles + "</div>";
   }
   function bar(pct) { return '<div class="prog" aria-hidden="true"><span style="width:' + pct + '%"></span></div>'; }
-  function emptyState(icon, title, msg) { return '<section class="card empty" style="margin-top:22px"><span class="ic">' + ic(icon, 26) + "</span><h2>" + esc(title) + "</h2><p>" + esc(msg) + "</p></section>"; }
+  function emptyState(icon, title, msg) { return '<section class="card empty" style="margin-top:22px"><span class="ic">' + ic(icon, 26) + "</span><h2>" + esc(T(title)) + "</h2><p>" + esc(T(msg)) + "</p></section>"; }
   function viewReplays(id) {
     var rs = C().replays;
     if (id) {
       var r = rs.filter(function (x) { return x.id === id; })[0];
       if (!r) return emptyState("play", "Replay not found", "It may have been moved. Go back to Replays.");
-      return '<a class="back" href="#/replays">← All replays</a><header class="page-head"><h1>' + esc(r.title) + '</h1><p>' + esc([r.recorded_on ? fmtDate(r.recorded_on + "T12:00:00") : "", mins(r.duration_min)].filter(Boolean).join(" · ")) + "</p></header>" +
+      return '<a class="back" href="#/replays">' + T("← All replays") + '</a><header class="page-head"><h1>' + esc(r.title) + '</h1><p>' + esc([r.recorded_on ? fmtDate(r.recorded_on + "T12:00:00") : "", mins(r.duration_min)].filter(Boolean).join(" · ")) + "</p></header>" +
         '<div class="watch">' + player(r.video_url, r.title) + (r.description ? '<section class="card">' + text(r.description) + "</section>" : "") + "</div>";
     }
-    var head = '<header class="page-head"><h1>Replays</h1><p>Every past live build, recorded end to end. Watch at your own pace.</p></header>';
+    var head = '<header class="page-head"><h1>' + T("Replays") + "</h1><p>" + T("Every past live build, recorded end to end. Watch at your own pace.") + "</p></header>";
     if (!rs.length) return head + emptyState("play", "First recordings coming soon", "Replays of past live builds will appear here. Your membership already includes them.");
     return head + '<div class="grid cols3">' + rs.map(function (r) {
       return '<a class="card tile media" href="#/replays/' + esc(r.id) + '"><span class="thumb">' + ic("play", 30) + (r.duration_min ? '<span class="dur">' + esc(mins(r.duration_min)) + "</span>" : "") + "</span><h3>" + esc(r.title) + "</h3><p>" + esc(r.recorded_on ? fmtDate(r.recorded_on + "T12:00:00") : (r.description || "").slice(0, 90)) + "</p></a>";
@@ -487,10 +500,10 @@
   function courseOutline(c, base) {
     var pr = progress(c.id), secs = sectionsOf(c.id), named = secs.some(function (x) { return x.name; }), n = 0;
     var firstOpen = lessonsOf(c.id).filter(function (x) { return !C().done[x.id]; })[0] || lessonsOf(c.id)[0];
-    return '<section class="card outline"><div class="prog-row"><span><b>' + pr.done + "/" + pr.total + "</b> lessons · " + pr.pct + "%</span>" +
-      (firstOpen ? '<a class="btn btn-p" href="' + base + esc(firstOpen.id) + '">' + (pr.done ? "Continue" : "Start") + " →</a>" : "") + "</div>" + bar(pr.pct) +
+    return '<section class="card outline"><div class="prog-row"><span><b>' + pr.done + "/" + pr.total + "</b> " + T("lessons") + " · " + pr.pct + "%</span>" +
+      (firstOpen ? '<a class="btn btn-p" href="' + base + esc(firstOpen.id) + '">' + (pr.done ? T("Continue") : T("Start")) + " →</a>" : "") + "</div>" + bar(pr.pct) +
       secs.map(function (sec, si) {
-        return '<div class="osec">' + (named ? '<div class="osec-h"><span class="onum">' + two(si + 1) + "</span><h2>" + esc(sec.name || "Lessons") + "</h2></div>" : "") +
+        return '<div class="osec">' + (named ? '<div class="osec-h"><span class="onum">' + two(si + 1) + "</span><h2>" + esc(sec.name || T("Lessons")) + "</h2></div>" : "") +
           '<ol class="lessons">' + sec.lessons.map(function (l2) {
             n++; var d = !!C().done[l2.id];
             return '<li><a href="' + base + esc(l2.id) + '"><span class="ln' + (d ? " ok" : "") + '">' + (d ? "✓" : n) + '</span><span class="lt">' + esc(l2.title) + "</span>" + (l2.duration_min ? '<span class="muted">' + esc(l2.duration_min + "m") + "</span>" : "") + "</a></li>";
@@ -502,15 +515,15 @@
     var l = ls[i];
     if (!l) return emptyState("book", "Lesson not found", "It may have been moved. Go back and pick another lesson.");
     var done = !!C().done[l.id], prev = ls[i - 1], next = ls[i + 1];
-    var side = '<nav class="lnav" aria-label="Lessons"><a class="back" href="' + backHref + '">← ' + esc(backLabel) + "</a>" + sectionsOf(c.id).map(function (sec) {
+    var side = '<nav class="lnav" aria-label="' + T("Lessons") + '"><a class="back" href="' + backHref + '">← ' + esc(T(backLabel)) + "</a>" + sectionsOf(c.id).map(function (sec) {
       return (sec.name ? '<div class="lnav-h">' + esc(sec.name) + "</div>" : "") + sec.lessons.map(function (x) {
         return '<a class="lnav-i' + (x.id === l.id ? " on" : "") + (C().done[x.id] ? " ok" : "") + '" href="' + base + esc(x.id) + '"' + (x.id === l.id ? ' aria-current="page"' : "") + "><span>" + esc(x.title) + "</span></a>";
       }).join("");
     }).join("") + "</nav>";
-    var lbar = '<div class="lesson-bar"><button class="btn ' + (done ? "btn-g" : "btn-p") + '" data-act="done" data-id="' + esc(l.id) + '" data-on="' + (done ? "0" : "1") + '">' + (done ? "✓ Completed · undo" : "Mark as done") + "</button>" +
-      '<span class="nav-pn">' + (prev ? '<a class="btn btn-g" href="' + base + esc(prev.id) + '">← Previous</a>' : "") + (next ? '<a class="btn btn-g" href="' + base + esc(next.id) + '">Next →</a>' : "") + "</span></div>";
-    return '<div class="lwrap">' + side + '<div class="lmain"><header class="page-head"><span class="mono-label">' + (l.section ? esc(l.section) + " · " : "") + "Lesson " + (i + 1) + " of " + ls.length + (l.duration_min ? " · " + esc(readTime(l.duration_min)) : "") + "</span><h1>" + esc(l.title) + "</h1></header>" +
-      '<div class="read"><article class="card lesson-body md">' + (l.description ? md(l.description) : '<p class="muted">This lesson is being written.</p>') + "</article>" + lbar + "</div></div></div>";
+    var lbar = '<div class="lesson-bar"><button class="btn ' + (done ? "btn-g" : "btn-p") + '" data-act="done" data-id="' + esc(l.id) + '" data-on="' + (done ? "0" : "1") + '">' + (done ? T("✓ Completed · undo") : T("Mark as done")) + "</button>" +
+      '<span class="nav-pn">' + (prev ? '<a class="btn btn-g" href="' + base + esc(prev.id) + '">' + T("← Previous") + "</a>" : "") + (next ? '<a class="btn btn-g" href="' + base + esc(next.id) + '">' + T("Next →") + "</a>" : "") + "</span></div>";
+    return '<div class="lwrap">' + side + '<div class="lmain"><header class="page-head"><span class="mono-label">' + (l.section ? esc(l.section) + " · " : "") + T("Lesson {n} of {t}", { n: i + 1, t: ls.length }) + (l.duration_min ? " · " + esc(readTime(l.duration_min)) : "") + "</span><h1>" + esc(l.title) + "</h1></header>" +
+      '<div class="read"><article class="card lesson-body md">' + (l.description ? md(l.description) : '<p class="muted">' + T("This lesson is being written.") + '</p>') + "</article>" + lbar + "</div></div></div>";
   }
   function viewLearning(cid, lid) {
     var lib = libCourse(), cs = C().courses.filter(function (c) { return c !== lib; });
@@ -518,12 +531,12 @@
     var c = cs.filter(function (x) { return x.id === cid; })[0];
     if (cid && !c) return emptyState("book", "Course not found", "It may have been moved. Go back to Learning.");
     if (cid && lid) return lessonPage(c, lid, "#/learning/" + esc(c.id) + "/", "#/learning/" + esc(c.id), c.title);
-    if (cid) return '<a class="back" href="#/learning">← All courses</a><header class="page-head"><h1>' + esc(c.title) + "</h1>" + (c.description ? "<p>" + esc(c.description) + "</p>" : "") + "</header>" + courseOutline(c, "#/learning/" + esc(c.id) + "/");
-    var head = '<header class="page-head"><h1>Learning</h1><p>Short, practical written lessons you can read in a few minutes. Mark lessons as done to track your progress.</p></header>';
+    if (cid) return '<a class="back" href="#/learning">' + T("← All courses") + '</a><header class="page-head"><h1>' + esc(c.title) + "</h1>" + (c.description ? "<p>" + esc(c.description) + "</p>" : "") + "</header>" + courseOutline(c, "#/learning/" + esc(c.id) + "/");
+    var head = '<header class="page-head"><h1>' + T("Learning") + "</h1><p>" + T("Short, practical written lessons you can read in a few minutes. Mark lessons as done to track your progress.") + (LANG !== "en" ? " " + T("The lessons are in simple English, the same language you'll use with Claude.") : "") + "</p></header>";
     if (!cs.length) return head + emptyState("book", "First course coming soon", "Courses and lessons will appear here. New ones are added every month.");
     return head + '<div class="grid cols3">' + cs.map(function (c3) {
       var p3 = progress(c3.id), ls3 = lessonsOf(c3.id), total = ls3.reduce(function (t, x) { return t + (Number(x.duration_min) || 0); }, 0);
-      return '<a class="card tile" href="#/learning/' + esc(c3.id) + '"><span class="ic">' + ic("book", 20) + "</span><h3>" + esc(c3.title) + "</h3><p>" + esc(c3.description || "") + '</p><span class="muted" style="font-size:13px">' + p3.total + (p3.total === 1 ? " lesson" : " lessons") + (total ? " · " + esc(readTime(total)) : "") + (p3.done ? " · " + p3.pct + "% done" : "") + "</span>" + bar(p3.pct) + "</a>";
+      return '<a class="card tile" href="#/learning/' + esc(c3.id) + '"><span class="ic">' + ic("book", 20) + "</span><h3>" + esc(c3.title) + "</h3><p>" + esc(c3.description || "") + '</p><span class="muted" style="font-size:13px">' + esc(T(p3.total === 1 ? "{n} lesson" : "{n} lessons", { n: p3.total })) + (total ? " · " + esc(readTime(total)) : "") + (p3.done ? " · " + esc(T("{n}% done", { n: p3.pct })) : "") + "</span>" + bar(p3.pct) + "</a>";
     }).join("") + "</div>";
   }
   var CAT_ORDER = ["Sales & Orders", "Inventory & Stock", "Staff & HR", "Bookings & Schedules", "Money & Finance", "Customers"];
@@ -531,30 +544,31 @@
     var lib = libCourse();
     if (lib && lid) return lessonPage(lib, lid, "#/prompts/", "#/prompts", "Prompt Library");
     var ps = C().prompts;
-    var head = '<header class="page-head"><h1>Prompt Library</h1><p>' + esc(lib && lib.description ? lib.description : "Copy-ready prompts for real business tasks. Replace the parts in [BRACKETS] with your own details.") + "</p></header>";
+    var head = '<header class="page-head"><h1>' + T("Prompt Library") + "</h1><p>" + esc(T(lib && lib.description ? lib.description : "Copy-ready prompts for real business tasks. Replace the parts in [BRACKETS] with your own details.")) + "</p></header>";
     var outline = lib ? courseOutline(lib, "#/prompts/") : "";
     var nsec = lib ? sectionsOf(lib.id).filter(function (x) { return x.name; }).length : 0;
-    var quickHead = '<div class="osec-h" style="margin-top:28px"><span class="onum">' + two(nsec + 1) + '</span><h2>Quick System Builds</h2></div>' +
-      '<p class="muted" style="margin:4px 0 0">One prompt = one working management app for your business. Pick the system you need, and Claude builds it for you in one go.</p>' +
-      '<ol class="howto"><li><b>Copy</b> a prompt below</li><li><b>Paste</b> it into Claude (claude.ai or the Claude app)</li><li><b>Replace</b> the [BRACKETS] with your own details, then send</li><li><b>Use</b> the app Claude builds. Ask Claude for changes anytime, and export a backup every week</li></ol>';
+    var quickHead = '<div class="osec-h" style="margin-top:28px"><span class="onum">' + two(nsec + 1) + '</span><h2>' + T("Quick System Builds") + "</h2></div>" +
+      '<p class="muted" style="margin:4px 0 0">' + T("One prompt = one working management app for your business. Pick the system you need, and Claude builds it for you in one go.") + "</p>" +
+      '<ol class="howto"><li>' + T("<b>Copy</b> a prompt below") + "</li><li>" + T("<b>Paste</b> it into Claude (claude.ai or the Claude app)") + "</li><li>" + T("<b>Replace</b> the [BRACKETS] with your own details, then send") + "</li><li>" + T("<b>Use</b> the app Claude builds. Ask Claude for changes anytime, and export a backup every week") + "</li></ol>" +
+      (LANG !== "en" ? '<p class="muted" style="margin:0 0 4px">' + T("Tip: the prompts are in English because Claude builds best that way. Want the explanations in your language? Add this line at the end: “Explain everything to me in Tagalog.”") + "</p>" : "");
     if (!ps.length) return head + outline + (lib ? "" : emptyState("prompt", "The library is being filled", "Prompts will appear here soon. Your membership already includes them."));
     var cats = ps.map(function (p) { return p.category; }).filter(function (c, i, a) { return a.indexOf(c) === i; })
       .sort(function (a, b) { var ia = CAT_ORDER.indexOf(a), ib = CAT_ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || (a < b ? -1 : 1); });
     var q = S.pq.trim().toLowerCase();
     var list = ps.filter(function (p) { return (!S.pcat || p.category === S.pcat) && (!q || (p.title + " " + p.body + " " + p.category).toLowerCase().indexOf(q) >= 0); })
       .sort(function (a, b) { return (cats.indexOf(a.category) - cats.indexOf(b.category)) || ((a.sort || 0) - (b.sort || 0)); });
-    return head + outline + (lib ? quickHead : "") + '<div class="pfilter"><div class="chips" role="group" aria-label="Filter by category"><button class="chip-btn" data-act="pcat" data-id="" aria-pressed="' + !S.pcat + '">All</button>' +
-      cats.map(function (c) { return '<button class="chip-btn" data-act="pcat" data-id="' + esc(c) + '" aria-pressed="' + (S.pcat === c) + '">' + esc(c) + "</button>"; }).join("") + "</div>" +
-      '<label class="psearch"><span class="sr-only">Search prompts</span><input class="input" id="pq" type="search" placeholder="Search systems (e.g. inventory, payroll)" value="' + esc(S.pq) + '"></label></div>' +
+    return head + outline + (lib ? quickHead : "") + '<div class="pfilter"><div class="chips" role="group" aria-label="Filter by category"><button class="chip-btn" data-act="pcat" data-id="" aria-pressed="' + !S.pcat + '">' + T("All") + "</button>" +
+      cats.map(function (c) { return '<button class="chip-btn" data-act="pcat" data-id="' + esc(c) + '" aria-pressed="' + (S.pcat === c) + '">' + esc(T(c)) + "</button>"; }).join("") + "</div>" +
+      '<label class="psearch"><span class="sr-only">' + T("Search prompts") + '</span><input class="input" id="pq" type="search" placeholder="' + esc(T("Search systems (e.g. inventory, payroll)")) + '" value="' + esc(S.pq) + '"></label></div>' +
       (list.length ? '<div class="prompts">' + list.map(function (p) {
-        return '<article class="card prompt"><div class="ptop"><span class="pill cat">' + esc(p.category) + '</span><button class="btn btn-g btn-sm" data-act="copy" data-id="' + esc(p.id) + '">Copy</button></div><h3>' + esc(p.title) + '</h3><pre class="pbody">' + esc(p.body) + '</pre></article>';
-      }).join("") + "</div>" : '<p class="muted" style="margin-top:20px">No prompts match. Try another word or category.</p>');
+        return '<article class="card prompt"><div class="ptop"><span class="pill cat">' + esc(T(p.category)) + '</span><button class="btn btn-g btn-sm" data-act="copy" data-id="' + esc(p.id) + '">' + T("Copy") + '</button></div><h3>' + esc(p.title) + '</h3><pre class="pbody">' + esc(p.body) + '</pre></article>';
+      }).join("") + "</div>" : '<p class="muted" style="margin-top:20px">' + T("No prompts match. Try another word or category.") + "</p>");
   }
 
   /* ---------- community ---------- */
   function me() { return S.user && S.user.id; }
   function isTeam() { return !!(S.member && S.member.team); }
-  function chName(slug) { var c = (S.channels || DEMO_CHANNELS).filter(function (x) { return x.slug === slug; })[0]; return c ? c.name : slug; }
+  function chName(slug) { var c = (S.channels || DEMO_CHANNELS).filter(function (x) { return x.slug === slug; })[0]; return c ? T(c.name) : slug; }
   function loadFeed(ch, more) {
     var f = S.feed[ch];
     if (f && (f.loading || (!more && f.posts))) return;
@@ -596,30 +610,30 @@
     (p.reactions || []).forEach(function (r) { counts[r.emoji] = (counts[r.emoji] || 0) + 1; if (r.user_id === me()) minev[r.emoji] = true; });
     var body = String(p.body || ""), cut = !full && body.length > 600;
     var opts = [];
-    if (mine) opts.push('<button data-act="p-edit" data-id="' + esc(p.id) + '">Edit</button>');
-    if (mod) opts.push('<button data-act="p-pin" data-id="' + esc(p.id) + '" data-on="' + (p.pinned ? "0" : "1") + '">' + (p.pinned ? "Unpin" : "Pin to top") + "</button>",
-      '<button data-act="p-hide" data-id="' + esc(p.id) + '" data-on="' + (p.hidden ? "0" : "1") + '">' + (p.hidden ? "Show to members" : "Hide from members") + "</button>");
-    if (mine || mod) opts.push('<button class="danger" data-act="p-del" data-id="' + esc(p.id) + '">Delete…</button>');
+    if (mine) opts.push('<button data-act="p-edit" data-id="' + esc(p.id) + '">' + T("Edit") + "</button>");
+    if (mod) opts.push('<button data-act="p-pin" data-id="' + esc(p.id) + '" data-on="' + (p.pinned ? "0" : "1") + '">' + (p.pinned ? T("Unpin") : T("Pin to top")) + "</button>",
+      '<button data-act="p-hide" data-id="' + esc(p.id) + '" data-on="' + (p.hidden ? "0" : "1") + '">' + (p.hidden ? T("Show to members") : T("Hide from members")) + "</button>");
+    if (mine || mod) opts.push('<button class="danger" data-act="p-del" data-id="' + esc(p.id) + '">' + T("Delete…") + "</button>");
     var editing = S.editing === "p:" + p.id;
     return '<article class="card post' + (p.hidden ? " is-hidden" : "") + '" id="post-' + esc(p.id) + '"><header class="ph">' + avatar(p.author_name, p.author_team) +
-      '<div class="who"><b>' + esc(p.author_name || "Member") + "</b>" + (p.author_team ? '<span class="pill team">Team</span>' : "") +
-      '<small class="muted"><a href="#/community/' + esc(p.channel) + '">#' + esc(chName(p.channel)) + "</a> · " + '<a href="#/community/post/' + esc(p.id) + '" title="' + esc(new Date(p.created_at).toLocaleString("en-PH")) + '">' + esc(ago(p.created_at)) + "</a>" + (p.edited_at ? " · edited" : "") + "</small></div>" +
-      (p.pinned ? '<span class="pill pin">Pinned</span>' : "") + (p.hidden ? '<span class="pill hid">Hidden</span>' : "") +
-      (opts.length ? '<details class="more"><summary aria-label="Post options">' + ic("dots") + '</summary><div class="menu">' + opts.join("") + "</div></details>" : "") + "</header>" +
-      (S.confirm === "p:" + p.id ? '<div class="confirm" role="alert"><span>Delete this post and its comments? This can\'t be undone.</span><button class="btn btn-sm btn-danger" data-act="p-del-yes" data-id="' + esc(p.id) + '">Delete</button><button class="btn btn-sm btn-g" data-act="cancel">Keep it</button></div>' : "") +
-      (editing ? '<form class="edit" data-form="p-edit" data-id="' + esc(p.id) + '"><label class="sr-only" for="pe-' + esc(p.id) + '">Edit post</label><textarea class="input" id="pe-' + esc(p.id) + '" rows="5" maxlength="5000">' + esc(body) + '</textarea><div class="row-end"><button type="button" class="btn btn-sm btn-g" data-act="cancel">Cancel</button><button class="btn btn-sm btn-p" type="submit">Save</button></div></form>'
-        : '<div class="pb">' + text(cut ? body.slice(0, 600).replace(/\s+\S*$/, "") + "…" : body) + (cut ? '<a class="more-link" href="#/community/post/' + esc(p.id) + '">Read more</a>' : "") + "</div>") +
+      '<div class="who"><b>' + esc(p.author_name || T("Member")) + "</b>" + (p.author_team ? '<span class="pill team">' + T("Team") + "</span>" : "") +
+      '<small class="muted"><a href="#/community/' + esc(p.channel) + '">#' + esc(chName(p.channel)) + "</a> · " + '<a href="#/community/post/' + esc(p.id) + '" title="' + esc(new Date(p.created_at).toLocaleString(LOC())) + '">' + esc(ago(p.created_at)) + "</a>" + (p.edited_at ? " · " + T("edited") : "") + "</small></div>" +
+      (p.pinned ? '<span class="pill pin">' + T("Pinned") + "</span>" : "") + (p.hidden ? '<span class="pill hid">' + T("Hidden") + "</span>" : "") +
+      (opts.length ? '<details class="more"><summary aria-label="' + T("Post options") + '">' + ic("dots") + '</summary><div class="menu">' + opts.join("") + "</div></details>" : "") + "</header>" +
+      (S.confirm === "p:" + p.id ? '<div class="confirm" role="alert"><span>' + T("Delete this post and its comments? This can't be undone.") + '</span><button class="btn btn-sm btn-danger" data-act="p-del-yes" data-id="' + esc(p.id) + '">' + T("Delete") + '</button><button class="btn btn-sm btn-g" data-act="cancel">' + T("Keep it") + '</button></div>' : "") +
+      (editing ? '<form class="edit" data-form="p-edit" data-id="' + esc(p.id) + '"><label class="sr-only" for="pe-' + esc(p.id) + '">' + T("Edit post") + '</label><textarea class="input" id="pe-' + esc(p.id) + '" rows="5" maxlength="5000">' + esc(body) + '</textarea><div class="row-end"><button type="button" class="btn btn-sm btn-g" data-act="cancel">' + T("Cancel") + '</button><button class="btn btn-sm btn-p" type="submit">' + T("Save") + '</button></div></form>'
+        : '<div class="pb">' + text(cut ? body.slice(0, 600).replace(/\s+\S*$/, "") + "…" : body) + (cut ? '<a class="more-link" href="#/community/post/' + esc(p.id) + '">' + T("Read more") + "</a>" : "") + "</div>") +
       '<footer class="pf"><div class="reacts" role="group" aria-label="Reactions">' + EMOJIS.map(function (e) {
         return '<button class="react" data-act="react" data-id="' + esc(p.id) + '" data-e="' + e + '" aria-pressed="' + !!minev[e] + '" aria-label="React ' + e + (counts[e] ? ", " + counts[e] : "") + '"' + (p.hidden ? " disabled" : "") + "><span>" + e + "</span>" + (counts[e] ? "<b>" + counts[e] + "</b>" : "") + "</button>";
       }).join("") + "</div>" +
-      (full ? "" : '<a class="cm-link" href="#/community/post/' + esc(p.id) + '">' + ic("chat", 16) + (p.ncomments ? p.ncomments + (p.ncomments === 1 ? " comment" : " comments") : "Comment") + "</a>") + "</footer></article>";
+      (full ? "" : '<a class="cm-link" href="#/community/post/' + esc(p.id) + '">' + ic("chat", 16) + (p.ncomments ? T(p.ncomments === 1 ? "{n} comment" : "{n} comments", { n: p.ncomments }) : T("Comment")) + "</a>") + "</footer></article>";
   }
   function composer(ch) {
     var chans = S.channels || DEMO_CHANNELS, sel = ch !== "all" ? ch : (S.composeCh || "general");
     return '<form class="card composer" data-form="post" novalidate><div class="crow">' + avatar(S.member && S.member.name, isTeam()) +
-      '<label class="sr-only" for="cbody">Write a post</label><textarea class="input" id="cbody" rows="3" maxlength="5000" placeholder="' + esc(ch === "help" ? "What are you stuck on? Say what you tried." : ch === "wins" ? "Share a win, big or small." : ch === "builds" ? "What did you build? Add a link if you can." : "Share something with the community…") + '">' + esc(S.draft) + "</textarea></div>" +
-      '<div class="cfoot"><label class="chsel">Post in <select id="cch" class="input">' + chans.map(function (c) { return '<option value="' + esc(c.slug) + '"' + (c.slug === sel ? " selected" : "") + ">#" + esc(c.name) + "</option>"; }).join("") + "</select></label>" +
-      '<span class="cfoot-r"><small class="muted" id="ccount">' + (S.draft.length > 4500 ? (5000 - S.draft.length) + " characters left" : "") + '</small><button class="btn btn-p" type="submit">Post</button></span></div><p class="form-error" role="alert" hidden></p></form>';
+      '<label class="sr-only" for="cbody">' + T("Write a post") + '</label><textarea class="input" id="cbody" rows="3" maxlength="5000" placeholder="' + esc(T(ch === "help" ? "What are you stuck on? Say what you tried." : ch === "wins" ? "Share a win, big or small." : ch === "builds" ? "What did you build? Add a link if you can." : "Share something with the community…")) + '">' + esc(S.draft) + "</textarea></div>" +
+      '<div class="cfoot"><label class="chsel">' + T("Post in") + ' <select id="cch" class="input">' + chans.map(function (c) { return '<option value="' + esc(c.slug) + '"' + (c.slug === sel ? " selected" : "") + ">#" + esc(T(c.name)) + "</option>"; }).join("") + "</select></label>" +
+      '<span class="cfoot-r"><small class="muted" id="ccount">' + (S.draft.length > 4500 ? T("{n} characters left", { n: 5000 - S.draft.length }) : "") + '</small><button class="btn btn-p" type="submit">' + T("Post") + '</button></span></div><p class="form-error" role="alert" hidden></p></form>';
   }
   function viewCommunity(a, b) {
     if (a === "post") return viewPost(b);
@@ -628,38 +642,38 @@
     var chans = S.channels || [];
     if (ch !== "all" && S.channels && !chans.some(function (c) { return c.slug === ch; })) return emptyState("chat", "Channel not found", "Pick a channel from the list.");
     var cur = chans.filter(function (c) { return c.slug === ch; })[0];
-    var tabs = '<nav class="chips ch-tabs" aria-label="Channels"><a class="chip-btn" href="#/community" aria-current="' + (ch === "all" ? "page" : "false") + '">All</a>' +
-      chans.map(function (c) { return '<a class="chip-btn" href="#/community/' + esc(c.slug) + '" aria-current="' + (ch === c.slug ? "page" : "false") + '">#' + esc(c.name) + "</a>"; }).join("") + "</nav>";
-    var head = '<header class="page-head"><h1>Community</h1><p>' + esc(cur ? cur.description : "Ask questions, share wins and show what you built. Be kind, be specific, help each other.") + "</p></header>";
+    var tabs = '<nav class="chips ch-tabs" aria-label="Channels"><a class="chip-btn" href="#/community" aria-current="' + (ch === "all" ? "page" : "false") + '">' + T("All") + "</a>" +
+      chans.map(function (c) { return '<a class="chip-btn" href="#/community/' + esc(c.slug) + '" aria-current="' + (ch === c.slug ? "page" : "false") + '">#' + esc(T(c.name)) + "</a>"; }).join("") + "</nav>";
+    var head = '<header class="page-head"><h1>' + T("Community") + "</h1><p>" + esc(T(cur ? cur.description : "Ask questions, share wins and show what you built. Be kind, be specific, help each other.")) + "</p></header>";
     var list;
-    if (!f || !f.posts) list = '<div class="loading" style="height:30vh">Loading posts…</div>';
-    else if (!f.posts.length) list = f.error ? '<p class="notice" style="margin-top:16px">' + esc(f.error) + "</p>" : emptyState("chat", ch === "all" ? "Be the first to post" : "Nothing in #" + chName(ch) + " yet", "Start the conversation. Every post earns you points on the leaderboard.");
+    if (!f || !f.posts) list = '<div class="loading" style="height:30vh">' + T("Loading posts…") + "</div>";
+    else if (!f.posts.length) list = f.error ? '<p class="notice" style="margin-top:16px">' + esc(f.error) + "</p>" : emptyState("chat", ch === "all" ? "Be the first to post" : T("Nothing in #{ch} yet", { ch: chName(ch) }), "Start the conversation. Every post earns you points on the leaderboard.");
     else list = '<div class="feed">' + f.posts.map(function (p) { return postCard(p, false); }).join("") + "</div>" +
-      (f.more ? '<div class="row-center"><button class="btn btn-g" data-act="more" data-id="' + esc(ch) + '"' + (f.loading ? " disabled" : "") + ">" + (f.loading ? "Loading…" : "Load older posts") + "</button></div>" : "");
+      (f.more ? '<div class="row-center"><button class="btn btn-g" data-act="more" data-id="' + esc(ch) + '"' + (f.loading ? " disabled" : "") + ">" + (f.loading ? T("Loading…") : T("Load older posts")) + "</button></div>" : "");
     return head + tabs + composer(ch) + list;
   }
   function viewPost(id) {
     var x = S.posts[id];
     if (!x) { loadPost(id); x = S.posts[id]; }
-    if (!x || x.loading) return '<div class="loading" style="height:40vh">Loading…</div>';
+    if (!x || x.loading) return '<div class="loading" style="height:40vh">' + T("Loading…") + "</div>";
     if (!x.post) return emptyState("chat", "Post not found", x.error || "It may have been removed. Go back to the community.");
     var p = x.post, mod = isTeam();
     var cs = (x.comments || []).map(function (c) {
       var mine = c.user_id === me(), editing = S.editing === "c:" + c.id;
       var acts = [];
-      if (mine && !editing) acts.push('<button data-act="c-edit" data-id="' + esc(c.id) + '">Edit</button>');
-      if (mod) acts.push('<button data-act="c-hide" data-id="' + esc(c.id) + '" data-on="' + (c.hidden ? "0" : "1") + '">' + (c.hidden ? "Show" : "Hide") + "</button>");
-      if (mine || mod) acts.push(S.confirm === "c:" + c.id ? '<button class="danger" data-act="c-del-yes" data-id="' + esc(c.id) + '">Confirm delete</button><button data-act="cancel">Cancel</button>' : '<button class="danger" data-act="c-del" data-id="' + esc(c.id) + '">Delete</button>');
-      return '<li class="cmt' + (c.hidden ? " is-hidden" : "") + '">' + avatar(c.author_name, c.author_team, true) + '<div class="cmt-b"><div class="cmt-h"><b>' + esc(c.author_name || "Member") + "</b>" + (c.author_team ? '<span class="pill team">Team</span>' : "") + (c.hidden ? '<span class="pill hid">Hidden</span>' : "") + '<small class="muted">' + esc(ago(c.created_at)) + (c.edited_at ? " · edited" : "") + "</small></div>" +
-        (editing ? '<form class="edit" data-form="c-edit" data-id="' + esc(c.id) + '"><label class="sr-only" for="ce-' + esc(c.id) + '">Edit comment</label><textarea class="input" id="ce-' + esc(c.id) + '" rows="3" maxlength="2000">' + esc(c.body) + '</textarea><div class="row-end"><button type="button" class="btn btn-sm btn-g" data-act="cancel">Cancel</button><button class="btn btn-sm btn-p" type="submit">Save</button></div></form>' : text(c.body)) +
+      if (mine && !editing) acts.push('<button data-act="c-edit" data-id="' + esc(c.id) + '">' + T("Edit") + "</button>");
+      if (mod) acts.push('<button data-act="c-hide" data-id="' + esc(c.id) + '" data-on="' + (c.hidden ? "0" : "1") + '">' + (c.hidden ? T("Show") : T("Hide")) + "</button>");
+      if (mine || mod) acts.push(S.confirm === "c:" + c.id ? '<button class="danger" data-act="c-del-yes" data-id="' + esc(c.id) + '">' + T("Confirm delete") + '</button><button data-act="cancel">' + T("Cancel") + "</button>" : '<button class="danger" data-act="c-del" data-id="' + esc(c.id) + '">' + T("Delete") + "</button>");
+      return '<li class="cmt' + (c.hidden ? " is-hidden" : "") + '">' + avatar(c.author_name, c.author_team, true) + '<div class="cmt-b"><div class="cmt-h"><b>' + esc(c.author_name || T("Member")) + "</b>" + (c.author_team ? '<span class="pill team">' + T("Team") + "</span>" : "") + (c.hidden ? '<span class="pill hid">' + T("Hidden") + "</span>" : "") + '<small class="muted">' + esc(ago(c.created_at)) + (c.edited_at ? " · " + T("edited") : "") + "</small></div>" +
+        (editing ? '<form class="edit" data-form="c-edit" data-id="' + esc(c.id) + '"><label class="sr-only" for="ce-' + esc(c.id) + '">' + T("Edit comment") + '</label><textarea class="input" id="ce-' + esc(c.id) + '" rows="3" maxlength="2000">' + esc(c.body) + '</textarea><div class="row-end"><button type="button" class="btn btn-sm btn-g" data-act="cancel">' + T("Cancel") + '</button><button class="btn btn-sm btn-p" type="submit">' + T("Save") + '</button></div></form>' : text(c.body)) +
         (acts.length ? '<div class="cmt-a">' + acts.join("") + "</div>" : "") + "</div></li>";
     }).join("");
     var n = (x.comments || []).length;
     return '<a class="back" href="#/community/' + esc(p.channel) + '">← #' + esc(chName(p.channel)) + "</a>" + '<div class="thread">' + postCard(p, true) +
-      '<section class="card comments" aria-label="Comments"><h2>' + (n ? n + (n === 1 ? " comment" : " comments") : "No comments yet") + "</h2>" +
+      '<section class="card comments" aria-label="' + T("Comments") + '"><h2>' + (n ? T(n === 1 ? "{n} comment" : "{n} comments", { n: n }) : T("No comments yet")) + "</h2>" +
       (n ? '<ol class="cmts">' + cs + "</ol>" : "") +
-      (p.hidden ? '<p class="muted">Comments are closed on hidden posts.</p>' :
-        '<form class="cform" data-form="comment" data-id="' + esc(p.id) + '" novalidate>' + avatar(S.member && S.member.name, isTeam(), true) + '<label class="sr-only" for="cmt">Write a comment</label><textarea class="input" id="cmt" rows="2" maxlength="2000" placeholder="' + (p.channel === "help" ? "Know the answer? Help them out." : "Write a comment…") + '">' + esc(S.cdraft[p.id] || "") + '</textarea><button class="btn btn-p" type="submit">Reply</button><p class="form-error" role="alert" hidden></p></form>') +
+      (p.hidden ? '<p class="muted">' + T("Comments are closed on hidden posts.") + "</p>" :
+        '<form class="cform" data-form="comment" data-id="' + esc(p.id) + '" novalidate>' + avatar(S.member && S.member.name, isTeam(), true) + '<label class="sr-only" for="cmt">' + T("Write a comment") + '</label><textarea class="input" id="cmt" rows="2" maxlength="2000" placeholder="' + esc(T(p.channel === "help" ? "Know the answer? Help them out." : "Write a comment…")) + '">' + esc(S.cdraft[p.id] || "") + '</textarea><button class="btn btn-p" type="submit">' + T("Reply") + '</button><p class="form-error" role="alert" hidden></p></form>') +
       "</section></div>";
   }
 
@@ -673,28 +687,28 @@
     var per = S.lbp, b = S.lb[per];
     if (!b) { loadBoard(per); b = S.lb[per]; }
     var pts = (S.member && S.member.points) || 0, li = lvlIdx(pts), nx = LEVELS[li + 1];
-    var head = '<header class="page-head"><h1>Leaderboard</h1><p>Earn points by posting, helping other members and finishing lessons. The monthly ranking resets on the 1st.</p></header>';
-    var tabs = '<div class="chips" role="group" aria-label="Period" style="margin-top:20px"><button class="chip-btn" data-act="lbp" data-id="month" aria-pressed="' + (per === "month") + '">This month</button><button class="chip-btn" data-act="lbp" data-id="all" aria-pressed="' + (per === "all") + '">All time</button></div>';
+    var head = '<header class="page-head"><h1>' + T("Leaderboard") + "</h1><p>" + T("Earn points by posting, helping other members and finishing lessons. The monthly ranking resets on the 1st.") + "</p></header>";
+    var tabs = '<div class="chips" role="group" aria-label="Period" style="margin-top:20px"><button class="chip-btn" data-act="lbp" data-id="month" aria-pressed="' + (per === "month") + '">' + T("This month") + '</button><button class="chip-btn" data-act="lbp" data-id="all" aria-pressed="' + (per === "all") + '">' + T("All time") + "</button></div>";
     var mine = b && b.rows ? b.rows.filter(function (r) { return r.is_me; })[0] : null;
-    var meCard = isTeam() ? '<section class="card me-card"><p class="muted">You\'re signed in as the PROVIDETECH Team, so you don\'t appear on the leaderboard.</p></section>' :
-      '<section class="card me-card"><div class="me-top">' + avatar(S.member.name, false) + '<div><span class="mono-label">Your level</span><b class="lv">Lv ' + (li + 1) + " · " + esc(LEVELS[li][1]) + '</b><small class="muted">' + pts + " points all time" + (mine && mine.points ? " · #" + mine.pos + (per === "month" ? " this month" : " overall") : "") + "</small></div></div>" +
-      (nx ? '<div class="nx"><div class="prog-row" style="margin:14px 0 8px"><small class="muted">' + (nx[0] - pts) + " points to Lv " + (li + 2) + " · " + esc(nx[1]) + "</small></div>" + bar(Math.round((pts - LEVELS[li][0]) / (nx[0] - LEVELS[li][0]) * 100)) + "</div>" : '<p class="muted" style="margin-top:12px">Top level reached. Legend.</p>') + "</section>";
+    var meCard = isTeam() ? '<section class="card me-card"><p class="muted">' + T("You're signed in as the PROVIDETECH Team, so you don't appear on the leaderboard.") + '</p></section>' :
+      '<section class="card me-card"><div class="me-top">' + avatar(S.member.name, false) + '<div><span class="mono-label">' + T("Your level") + '</span><b class="lv">Lv ' + (li + 1) + " · " + esc(LEVELS[li][1]) + '</b><small class="muted">' + T("{n} points all time", { n: pts }) + (mine && mine.points ? " · " + T(per === "month" ? "#{n} this month" : "#{n} overall", { n: mine.pos }) : "") + "</small></div></div>" +
+      (nx ? '<div class="nx"><div class="prog-row" style="margin:14px 0 8px"><small class="muted">' + T("{n} points to Lv {l}", { n: nx[0] - pts, l: li + 2 }) + " · " + esc(nx[1]) + "</small></div>" + bar(Math.round((pts - LEVELS[li][0]) / (nx[0] - LEVELS[li][0]) * 100)) + "</div>" : '<p class="muted" style="margin-top:12px">' + T("Top level reached. Legend.") + '</p>') + "</section>";
     var list;
-    if (!b || b.loading) list = '<div class="loading" style="height:24vh">Loading…</div>';
+    if (!b || b.loading) list = '<div class="loading" style="height:24vh">' + T("Loading…") + "</div>";
     else if (b.error) list = '<p class="notice">' + esc(b.error) + "</p>";
     else {
       var rows = b.rows.filter(function (r) { return r.points > 0; });
       list = rows.length ? '<ol class="board">' + rows.map(function (r) {
-        return '<li class="' + (r.is_me ? "me" : "") + (r.pos <= 3 ? " top" + r.pos : "") + '"><span class="rk">' + (r.pos <= 3 ? ["🥇", "🥈", "🥉"][r.pos - 1] : r.pos) + "</span>" + avatar(r.name, false, true) + '<span class="nm">' + esc(r.name) + (r.is_me ? ' <small class="muted">(you)</small>' : "") + '</span><span class="pt"><b>' + r.points + "</b> pts</span></li>";
-      }).join("") + "</ol>" : '<p class="muted" style="padding:8px 0">No points yet ' + (per === "month" ? "this month" : "") + ". Post in the community or finish a lesson to get on the board.</p>";
+        return '<li class="' + (r.is_me ? "me" : "") + (r.pos <= 3 ? " top" + r.pos : "") + '"><span class="rk">' + (r.pos <= 3 ? ["🥇", "🥈", "🥉"][r.pos - 1] : r.pos) + "</span>" + avatar(r.name, false, true) + '<span class="nm">' + esc(r.name) + (r.is_me ? ' <small class="muted">(' + T("you") + ")</small>" : "") + '</span><span class="pt"><b>' + r.points + "</b> pts</span></li>";
+      }).join("") + "</ol>" : '<p class="muted" style="padding:8px 0">' + T(per === "month" ? "No points yet this month. Post in the community or finish a lesson to get on the board." : "No points yet. Post in the community or finish a lesson to get on the board.") + "</p>";
     }
-    var rules = '<section class="card"><h2>How to earn points</h2><ul class="rules">' +
-      "<li><b>+5</b><span>Post in the community <small class=\"muted\">(first 5 posts a day)</small></span></li>" +
-      "<li><b>+3</b><span>Comment on another member's post <small class=\"muted\">(first 10 a day)</small></span></li>" +
-      "<li><b>+1</b><span>Each member who reacts to your post</span></li>" +
-      "<li><b>+10</b><span>Finish a lesson in Learning</span></li></ul>" +
-      '<p class="muted" style="font-size:13px">Posts hidden by the team stop counting.</p></section>' +
-      '<section class="card"><h2>Levels</h2><ol class="levels">' + LEVELS.map(function (l, k) { return '<li' + (k === li && !isTeam() ? ' class="cur"' : "") + "><span>Lv " + (k + 1) + " · " + esc(l[1]) + "</span><small class=\"muted\">" + l[0] + "+ pts</small></li>"; }).join("") + "</ol></section>";
+    var rules = '<section class="card"><h2>' + T("How to earn points") + '</h2><ul class="rules">' +
+      "<li><b>+5</b><span>" + T("Post in the community") + ' <small class="muted">(' + T("first 5 posts a day") + ")</small></span></li>" +
+      "<li><b>+3</b><span>" + T("Comment on another member's post") + ' <small class="muted">(' + T("first 10 a day") + ")</small></span></li>" +
+      "<li><b>+1</b><span>" + T("Each member who reacts to your post") + "</span></li>" +
+      "<li><b>+10</b><span>" + T("Finish a lesson in Learning") + "</span></li></ul>" +
+      '<p class="muted" style="font-size:13px">' + T("Posts hidden by the team stop counting.") + "</p></section>" +
+      '<section class="card"><h2>' + T("Levels") + '</h2><ol class="levels">' + LEVELS.map(function (l, k) { return '<li' + (k === li && !isTeam() ? ' class="cur"' : "") + "><span>Lv " + (k + 1) + " · " + esc(l[1]) + "</span><small class=\"muted\">" + l[0] + "+ pts</small></li>"; }).join("") + "</ol></section>";
     return head + '<div class="lb-grid"><div>' + tabs + '<section class="card" style="margin-top:14px">' + list + "</section></div><aside class=\"lb-side\">" + meCard + rules + "</aside></div>";
   }
   function viewSection(key) {
@@ -706,9 +720,9 @@
   }
   function viewExpired() {
     var m = S.member;
-    return authPage('<div><h1>' + (m ? "Your access has ended" : "No Builder Hub access") + '</h1><p class="sub">' +
-      (m ? "Your Builder Hub membership ended on " + esc(fmtDate(m.access_until)) + ". Message us from the website to renew." : "This account (" + esc(S.user && S.user.email) + ") doesn't have Builder Hub access yet. You get it by adding the Builder Hub when you reserve a workshop seat.") +
-      '</p></div><a class="btn btn-p" href="/">Go to the website</a><div class="auth-links"><button class="btn btn-g" data-act="signout" style="width:100%">Sign out</button></div>');
+    return authPage('<div><h1>' + (m ? T("Your access has ended") : T("No Builder Hub access")) + '</h1><p class="sub">' +
+      (m ? T("Your Builder Hub membership ended on {date}. Message us from the website to renew.", { date: esc(fmtDate(m.access_until)) }) : T("This account ({email}) doesn't have Builder Hub access yet. You get it by adding the Builder Hub when you reserve a workshop seat.", { email: esc(S.user && S.user.email) })) +
+      '</p></div><a class="btn btn-p" href="/">' + T("Go to the website") + '</a><div class="auth-links"><button class="btn btn-g" data-act="signout" style="width:100%">' + T("Sign out") + "</button></div>");
   }
 
   function render() {
@@ -719,13 +733,13 @@
     if (r.path === "login") return go("");
     if (!active()) return viewExpired();
     var parts = r.path.split("/"), key = parts[0];
-    if (!S.c) { loadContent(); app.innerHTML = shell(key, '<div class="loading" style="height:50vh">Loading…</div>'); return; }
+    if (!S.c) { loadContent(); app.innerHTML = shell(key, '<div class="loading" style="height:50vh">' + T("Loading…") + "</div>"); return; }
     var view = !key ? viewHome() : key === "replays" ? viewReplays(parts[1]) : key === "learning" ? viewLearning(parts[1], parts[2]) : key === "prompts" ? viewPrompts(parts[1]) : key === "community" ? viewCommunity(parts[1], parts[2]) : key === "leaderboard" ? viewLeaderboard() : viewSection(key);
     var sy = S.keepScroll ? window.scrollY : 0;
     app.innerHTML = shell(key, view);
     if (S.keepScroll) { window.scrollTo(0, sy); S.keepScroll = false; }
     if (S.focus) { var fe = document.getElementById(S.focus); if (fe) { fe.focus(); try { fe.setSelectionRange(fe.value.length, fe.value.length); } catch (e) {} } S.focus = null; }
-    document.title = (key ? PAGES[key] ? PAGES[key][1] : "Hub" : "Home") + " · Builder Hub";
+    document.title = T(key ? PAGES[key] ? PAGES[key][1] : "Hub" : "Home") + " · Builder Hub";
   }
 
   app.addEventListener("click", function (e) {
@@ -742,7 +756,7 @@
     if (a === "p-del-yes") {
       var pid = t.getAttribute("data-id"); t.disabled = true;
       var back = S.posts[pid] && S.posts[pid].post ? S.posts[pid].post.channel : null, onPost = route().path.indexOf("community/post/") === 0;
-      api.removePost(pid).then(function () { dropPost(pid); S.confirm = null; alertMsg("Post deleted."); if (onPost) go("community/" + (back || "")); else { S.keepScroll = true; render(); } refreshPoints(); },
+      api.removePost(pid).then(function () { dropPost(pid); S.confirm = null; alertMsg(T("Post deleted.")); if (onPost) go("community/" + (back || "")); else { S.keepScroll = true; render(); } refreshPoints(); },
         function (er) { t.disabled = false; alertMsg(friendly(er)); });
     }
     if (a === "p-pin" || a === "p-hide") {
@@ -750,7 +764,7 @@
       api.flagPost(t.getAttribute("data-id"), patch).then(function (np) {
         replacePost(np);
         if (a === "p-pin") Object.keys(S.feed).forEach(function (k) { var f = S.feed[k]; if (f.posts) f.posts.sort(function (x, y) { return (y.pinned - x.pinned) || (x.created_at < y.created_at ? 1 : -1); }); });
-        alertMsg(a === "p-pin" ? (np.pinned ? "Pinned to the top." : "Unpinned.") : (np.hidden ? "Hidden from members." : "Visible to members again."));
+        alertMsg(T(a === "p-pin" ? (np.pinned ? "Pinned to the top." : "Unpinned.") : (np.hidden ? "Hidden from members." : "Visible to members again.")));
         S.keepScroll = true; render();
       }, function (er) { alertMsg(friendly(er)); });
     }
@@ -776,17 +790,17 @@
       var id = t.getAttribute("data-id"), on = t.getAttribute("data-on") === "1";
       t.disabled = true;
       api.setDone(id, on).then(function () { if (on) S.c.done[id] = new Date().toISOString(); else delete S.c.done[id]; S.keepScroll = true; render(); refreshPoints(); },
-        function (er) { t.disabled = false; alertMsg(er.message || "Couldn't save. Try again."); });
+        function (er) { t.disabled = false; alertMsg(er.message || T("Couldn't save. Try again.")); });
     }
     if (a === "copy-block") {
       var pre = t.parentNode.querySelector("pre"), txt = pre ? pre.textContent : "";
-      var okB = function () { t.textContent = "Copied ✓"; setTimeout(function () { t.textContent = "Copy"; }, 1600); };
+      var okB = function () { t.textContent = T("Copied ✓"); setTimeout(function () { t.textContent = T("Copy"); }, 1600); };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(okB, function () { fallbackCopy(txt); okB(); });
       else { fallbackCopy(txt); okB(); }
     }
     if (a === "copy") {
       var p = C().prompts.filter(function (x) { return x.id === t.getAttribute("data-id"); })[0]; if (!p) return;
-      var okFn = function () { t.textContent = "Copied ✓"; setTimeout(function () { t.textContent = "Copy"; }, 1600); };
+      var okFn = function () { t.textContent = T("Copied ✓"); setTimeout(function () { t.textContent = T("Copy"); }, 1600); };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(p.body).then(okFn, function () { fallbackCopy(p.body); okFn(); });
       else { fallbackCopy(p.body); okFn(); }
     }
@@ -794,23 +808,23 @@
   app.addEventListener("input", function (e) {
     var id = e.target.id;
     if (id === "pq") { S.pq = e.target.value; S.focus = "pq"; render(); }
-    if (id === "cbody") { S.draft = e.target.value; var cc = document.getElementById("ccount"); if (cc) cc.textContent = S.draft.length > 4500 ? (5000 - S.draft.length) + " characters left" : ""; }
+    if (id === "cbody") { S.draft = e.target.value; var cc = document.getElementById("ccount"); if (cc) cc.textContent = S.draft.length > 4500 ? T("{n} characters left", { n: 5000 - S.draft.length }) : ""; }
     if (id === "cmt") { var f0 = e.target.closest("form"); if (f0) S.cdraft[f0.getAttribute("data-id")] = e.target.value; }
   });
-  app.addEventListener("change", function (e) { if (e.target.id === "cch") S.composeCh = e.target.value; });
+  app.addEventListener("change", function (e) { if (e.target.id === "cch") S.composeCh = e.target.value; if (e.target.id === "hub-lang") setLang(e.target.value); });
   app.addEventListener("submit", function (e) {
     var f = e.target, kind = f.getAttribute("data-form"); if (!kind) return;
     e.preventDefault();
     var ta = f.querySelector("textarea"), body = ta ? ta.value.trim() : "", id = f.getAttribute("data-id"), err = f.querySelector(".form-error");
     function bad(m) { if (err) { err.textContent = m; err.hidden = false; } else alertMsg(m); }
-    if (!body) return bad(kind === "comment" ? "Write something first." : "Your post is empty.");
+    if (!body) return bad(T(kind === "comment" ? "Write something first." : "Your post is empty."));
     busy(f, true);
     if (kind === "post") {
       var ch = document.getElementById("cch").value;
       api.createPost(ch, body).then(function (np) {
         S.draft = ""; S.composeCh = ch;
         ["all", ch].forEach(function (k) { var fd = S.feed[k]; if (fd && fd.posts) { var i = 0; while (i < fd.posts.length && fd.posts[i].pinned) i++; fd.posts.splice(i, 0, np); } });
-        alertMsg(route().path === "community" || route().path === "community/" + ch ? "Posted. +5 points" : "Posted in #" + chName(ch) + ". +5 points");
+        alertMsg(route().path === "community" || route().path === "community/" + ch ? T("Posted. +5 points") : T("Posted in #{ch}. +5 points", { ch: chName(ch) }));
         S.keepScroll = true; render(); refreshPoints();
       }, function (er) { busy(f, false); bad(friendly(er)); });
     }
@@ -834,6 +848,6 @@
   window.addEventListener("hashchange", function () { S.menu = false; render(); });
 
   ready().then(api.session).then(function (s) { setSession(s); render(); }).catch(function (e) {
-    app.innerHTML = '<main class="auth"><div class="auth-card">' + brand + '<p class="form-error">' + esc(e.message || "Couldn't load the hub.") + "</p></div></main>";
+    app.innerHTML = '<main class="auth"><div class="auth-card">' + brand + '<p class="form-error">' + esc(e.message || T("Couldn't load the hub.")) + "</p></div></main>";
   });
 })();
