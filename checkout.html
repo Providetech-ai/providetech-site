@@ -904,7 +904,8 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
       b:[['bH1','We come to your home or office'],['bH2','Just you and your coach, side by side'],['bH3','Built around your own business problem'],['bH4','Learn at your pace and ask anything'],['bH5','We call or text within 24 hours to set the schedule']]}
   ];
   function fmtOf(s){return (s&&s.format)||'online'}
-  function inFmt(f){return (SESSIONS||[]).filter(function(x){return fmtOf(x)===f})}
+  function startMin(t){var m=/(\d{1,2})(?::(\d{2}))?\s*([AP])M/i.exec(String(t||''));if(!m)return 0;var h=+m[1]%12+(/p/i.test(m[3])?12:0);return h*60+(+m[2]||0)}
+  function inFmt(f){return (SESSIONS||[]).filter(function(x){return fmtOf(x)===f}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:startMin(a.time_label)-startMin(b.time_label)})}
   function prodOf(f){return PRODUCTS.filter(function(p){return p.f===f})[0]}
   function homeSession(){var h=inFmt('home');return h.filter(function(x){return x.seats_left>0})[0]||h[0]||null}
   function sessFor(f){if(f==='home'){var h=homeSession();return h&&h.seats_left>0?h:null}return (SESSIONS||[]).filter(function(x){return x.id===chosen[f]&&x.seats_left>0})[0]||null}
