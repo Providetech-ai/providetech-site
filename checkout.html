@@ -912,8 +912,8 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
     if(!SESSIONS||!SESSIONS.length){pb.hidden=true;return}
     pb.hidden=false;
     PRODUCTS.forEach(function(p){
-      var list=inFmt(p.f);if(!list.length)return;
-      var min=Math.min.apply(null,list.map(function(x){return Number(x.price)||0}));
+      var list=inFmt(p.f);if(!list.length&&p.f!=='f2f')return;
+      var min=list.length?Math.min.apply(null,list.map(function(x){return Number(x.price)||0})):5999;
       var l=document.createElement('label');l.className='choice';
       l.innerHTML='<input type="radio" name="product"><span class="dot"></span><span class="sess-main"><b></b><small></small></span><span class="prod-price"></span>';
       var inp=l.querySelector('input');inp.value=p.f;if(prod===p.f)inp.checked=true;
@@ -961,7 +961,7 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
     return dateLabel(s.date)+(s.time_label?' · '+s.time_label:'')}
   function peso(n){return '₱'+Number(n).toLocaleString('en-PH')}
   function hubOn(){return !!(HUB_OFFER&&HUB_OFFER.enabled&&document.getElementById('addHub').checked)}
-  function seatPrice(){var s=curSession();if(s&&s.price!=null)return Number(s.price);var l=inFmt(prod||'online');return l.length?Number(l[0].price):999}
+  function seatPrice(){var s=curSession();if(s&&s.price!=null)return Number(s.price);var l=inFmt(prod||'online');return l.length?Number(l[0].price):({f2f:5999,home:9999}[prod]||999)}
   function orderTotal(){return seatPrice()+(hubOn()?Number(HUB_OFFER.price)||0:0)}
   function renderOffer(){
     var box=document.getElementById('hubOffer');
@@ -1107,7 +1107,7 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
       if(!chosen){try{var want=new URLSearchParams(location.search).get('batch');var hit=SESSIONS.filter(function(x){return x.id===want&&x.seats_left>0})[0];if(hit)chosen=hit.id}catch(e){}}
       if(!prod){var cs=curSession(),qp=null;try{qp=new URLSearchParams(location.search).get('product')}catch(e){}
         if(cs)prod=fmtOf(cs);
-        else if(qp&&inFmt(qp).length)prod=qp;
+        else if(qp&&(inFmt(qp).length||qp==='f2f'))prod=qp;
         else{var av=PRODUCTS.filter(function(p){return inFmt(p.f).some(function(x){return x.seats_left>0})})[0];prod=av?av.f:(SESSIONS[0]?fmtOf(SESSIONS[0]):'online')}
         setProd(prod)}
       else if(!chosen)setProd(prod);
