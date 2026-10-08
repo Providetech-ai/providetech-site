@@ -51,7 +51,7 @@
     var links = [];
     t = esc(t).replace(/\[([^\]]+)\]\((https:\/\/[^\s)]+)\)/g, function (_, label, url) { links.push('<a href="' + url + '" target="_blank" rel="noopener">' + label + "</a>"); return "\u0000" + (links.length - 1) + "\u0000"; });
     t = t.replace(/(https:\/\/[^\s<]+[^\s<.,;:!?)])/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
-    t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>");
+    t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/(^|[^*\w])\*(\S(?:[^*]*?\S)?)\*(?![*\w])/g, "$1<em>$2</em>");
     return t.replace(/\u0000(\d+)\u0000/g, function (_, i) { return links[+i]; });
   }
   function md(src) {
@@ -81,9 +81,9 @@
         continue;
       }
       if (/^\s*\d+[.)]\s+/.test(ln)) {
-        var ol = [];
+        var ol = [], st = parseInt(ln, 10);
         while (i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) ol.push("<li>" + mdInline(lines[i++].replace(/^\s*\d+[.)]\s+/, "")) + "</li>");
-        out.push("<ol>" + ol.join("") + "</ol>");
+        out.push("<ol" + (st > 1 ? ' start="' + st + '"' : "") + ">" + ol.join("") + "</ol>");
         continue;
       }
       var para = [];
