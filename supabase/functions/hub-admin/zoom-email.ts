@@ -338,6 +338,7 @@ export async function deliver(m: Mail): Promise<{ ok: true; id: string | null } 
 
 /** Sends the Zoom email for a paid reservation and records it in its history. */
 export async function sendZoomEmail(db: any, r: any, s: any): Promise<SendResult> {
+  if (s.format === "hub") return { ok: false, error: "NOT_NEEDED", message: "Builder Hub orders get their access email instead.", status: 409 };
   if (r.status !== "paid") return { ok: false, error: "NOT_PAID", message: "The Zoom link is only sent to paid participants.", status: 409 };
   if ((s.format || "online") === "online" && !/^https:\/\/\S+$/.test(String(s.zoom_link || ""))) {
     return { ok: false, error: "NO_ZOOM_LINK", message: `Add the Zoom link to ${s.code} in Workshops first.`, status: 422 };

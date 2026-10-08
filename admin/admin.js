@@ -51,7 +51,7 @@
   var FLEX = "2099-12-31"; // 1-on-1 coaching: no fixed date, scheduled by phone
   function isFlex(s) { return String(s) === FLEX; }
   function fmtOf(s) { return (s && s.format) || "online"; }
-  var FMT_LABEL = { online: "Online (Zoom)", f2f: "Face-to-face", home: "1-on-1 door-to-door" };
+  var FMT_LABEL = { online: "Online (Zoom)", f2f: "Face-to-face", home: "1-on-1 door-to-door", hub: "Builder Hub only" };
   function fmtDate(s) { if (isFlex(s)) return "Flexible schedule"; return parseYmd(s).toLocaleDateString("en-PH", { weekday: "short", day: "numeric", month: "short", year: "numeric" }); }
   function fmtLong(s) { if (isFlex(s)) return "Flexible schedule (we call to book)"; return parseYmd(s).toLocaleDateString("en-PH", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
   function fmtDT(iso) {
@@ -313,7 +313,8 @@
     if (newQ.length) att.push(['<span class="badge-ic" style="background:var(--blue-50);color:var(--blue-ink)">' + I.chat + "</span>", newQ.length + (newQ.length === 1 ? " new inquiry" : " new inquiries"),
       oldNew.length ? oldNew.length + " waiting more than 24 hours" : "Not contacted yet", "go", "inquiries", "Open"]);
     upcoming().forEach(function (s) {
-      if (!s.venue && fmtOf(s) !== "home") att.push(['<span class="badge-ic" style="background:var(--bg);color:var(--ink-2)">' + I.cal + "</span>", s.code + " has no venue yet", fmtDate(s.date) + " · " + (s.status === "draft" ? "still a draft" : "open for reservations"), "edit-batch", s.id, "Set"]);
+      if (!s.venue && fmtOf(s) !== "home" && fmtOf(s) !== "hub") att.push(['<span class="badge-ic" style="background:var(--bg);color:var(--ink-2)">' + I.cal + "</span>", s.code + " has no venue yet", fmtDate(s.date) + " · " + (s.status === "draft" ? "still a draft" : "open for reservations"), "edit-batch", s.id, "Set"]);
+      if (fmtOf(s) === "hub") return;
       if (fmtOf(s) !== "online") { var cp = zoomPending(s).length; if (cp) att.push(['<span class="badge-ic" style="background:var(--warn-bg);color:var(--warn)">' + I.cal + "</span>", cp + (cp === 1 ? " paid booking hasn't" : " paid bookings haven't") + " got the confirmation email", s.code + " · open Participants to send it", "go-batch", s.id, "Open"]); }
       else if (!s.zoom_link && s.status !== "draft") att.push(['<span class="badge-ic" style="background:var(--warn-bg);color:var(--warn)">' + I.cal + "</span>", s.code + " has no Zoom link yet", "Paid participants get it by email once you add it", "edit-batch", s.id, "Add"]);
       else if (s.zoom_link && zoomPending(s).length) { var zp = zoomPending(s).length; att.push(['<span class="badge-ic" style="background:var(--warn-bg);color:var(--warn)">' + I.cal + "</span>", zp + (zp === 1 ? " paid participant hasn't" : " paid participants haven't") + " got the Zoom link", s.code + " · open the batch to send it", "edit-batch", s.id, "Send"]); }
@@ -382,9 +383,9 @@
     var pct = function (n) { return (n / s.capacity * 100).toFixed(1) + "%"; };
     var fm = fmtOf(s);
     return '<article class="card batch"><div class="batch-top"><div><span class="mono-label">' + esc(s.code) + " · " + esc(FMT_LABEL[fm]) + "</span><h3>" + esc(s.title) + "</h3></div>" + pill(SST, lab) + "</div>" +
-      '<div class="meta">' + esc(fmtLong(s.date)) + (s.time_label ? "<br>" + esc(s.time_label) : "") + "<br>" + (s.venue ? esc(s.venue) : fm === "home" ? "At the client's address" : '<span class="warnTxt">No venue yet</span>') +
+      '<div class="meta">' + esc(fmtLong(s.date)) + (s.time_label ? "<br>" + esc(s.time_label) : "") + "<br>" + (s.venue ? esc(s.venue) : fm === "hub" ? "Bought on its own at checkout" : fm === "home" ? "At the client's address" : '<span class="warnTxt">No venue yet</span>') +
       (fm !== "online" ? "" : s.zoom_link ? "<br>Zoom link added" : daysUntil(s.date) >= 0 && s.status !== "done" ? '<br><span class="warnTxt">No Zoom link yet</span>' : "") + "</div>" +
-      '<div style="display:grid;gap:8px"><div class="batch-stats"><span><b class="num">' + (st.paid + st.refund) + " of " + s.capacity + '</b> ' + (fm === "home" ? "booked" : "paid") + '</span><span class="muted num">' + peso(s.price) + (fm === "home" ? " per booking" : " per seat") + "</span></div>" +
+      '<div style="display:grid;gap:8px"><div class="batch-stats"><span><b class="num">' + (st.paid + st.refund) + " of " + s.capacity + '</b> ' + (fm === "home" ? "booked" : "paid") + '</span><span class="muted num">' + peso(s.price) + (fm === "hub" ? " + add-on price" : fm === "home" ? " per booking" : " per seat") + "</span></div>" +
       '<div class="seatbar" aria-hidden="true"><span style="width:' + pct(st.paid) + ';background:var(--blue)"></span><span style="width:' + pct(st.held) + ';background:var(--blue-300)"></span><span style="width:' + pct(st.refund) + ';background:var(--warn-bar)"></span></div>' +
       '<div class="batch-stats"><span class="muted num">' + st.pending + " waiting for payment · " + st.refund + " refunds</span><b class=\"num\">" + peso(st.collected) + "</b></div></div>" +
       '<div class="batch-actions"><a class="btn btn-g btn-sm" href="#/participants" data-act="go-batch" data-id="' + esc(s.id) + '">Participants</a>' +
@@ -415,7 +416,7 @@
       '<div class="form-grid">' +
       field(lbl("bcode", "Batch name"), '<input class="input" id="bcode" name="code" required value="' + esc(s.code) + '">') +
       field(lbl("bstatus", "Status"), '<select class="input" id="bstatus" name="status">' + opt("draft", "Draft (hidden)", s.status) + opt("open", "Open for reservations", s.status) + opt("full", "Full (stop reservations)", s.status) + opt("done", "Done", s.status) + "</select>") +
-      '<div class="span2">' + field(lbl("bformat", "Type"), '<select class="input" id="bformat" name="format">' + opt("online", "Online workshop (Zoom) · ₱999", fm0) + opt("f2f", "Face-to-face workshop · scheduled date · ₱5,999", fm0) + opt("home", "1-on-1 door-to-door coaching · we call to schedule · ₱9,999", fm0) + "</select>", "1-on-1 has no fixed date: buyers enter their address and you call them to set the visit.") + "</div>" +
+      '<div class="span2">' + field(lbl("bformat", "Type"), '<select class="input" id="bformat" name="format">' + opt("online", "Online workshop (Zoom) · ₱999", fm0) + opt("f2f", "Face-to-face workshop · scheduled date · ₱5,999", fm0) + opt("home", "1-on-1 door-to-door coaching · we call to schedule · ₱9,999", fm0) + (fm0 === "hub" ? opt("hub", "Builder Hub only (checkout uses this; keep it Open)", fm0) : "") + "</select>", "1-on-1 has no fixed date: buyers enter their address and you call them to set the visit.") + "</div>" +
       '<div class="span2">' + field(lbl("btitle", "Workshop title"), '<input class="input" id="btitle" name="title" required value="' + esc(s.title) + '">') + "</div>" +
       '<div class="field" data-fm="dated">' + lbl("bdate", "Date") + '<input class="input" id="bdate" name="date" type="date" value="' + esc(isFlex(s.date) ? "" : s.date) + '"></div>' +
       field(lbl("btime", "Time"), '<input class="input" id="btime" name="time_label" placeholder="9:00 AM – 5:00 PM" value="' + esc(s.time_label) + '">') +
@@ -428,7 +429,7 @@
       "</div>",
       { submit: isNew ? "Create batch" : "Save changes", onSubmit: function (f) {
         if (!f.code.trim()) throw new Error("Give the batch a name.");
-        if (f.format === "home") f.date = FLEX;
+        if (f.format === "home" || f.format === "hub") f.date = FLEX;
         if (!f.date) throw new Error("Pick a date.");
         if (f.format !== "online") { f.zoom_link = ""; }
         if ((parseInt(f.capacity, 10) || 0) < Math.max(1, taken)) throw new Error("Seats can't be lower than the " + taken + " already reserved.");
@@ -451,7 +452,7 @@
     var fsel = document.getElementById("bformat");
     function syncFmt(changed) {
       var v = fsel.value, dlg = document.getElementById("modal");
-      [].forEach.call(dlg.querySelectorAll("[data-fm]"), function (el) { var k = el.getAttribute("data-fm"); el.hidden = k === "dated" ? v === "home" : k !== v; });
+      [].forEach.call(dlg.querySelectorAll("[data-fm]"), function (el) { var k = el.getAttribute("data-fm"); el.hidden = k === "dated" ? (v === "home" || v === "hub") : k !== v; });
       if (changed && isNew) {
         var pre = { online: "Batch ", f2f: "F2F ", home: "1-on-1" }[v];
         var cnt = D().sessions.filter(function (x) { return fmtOf(x) === v; }).length + 1;
@@ -525,6 +526,7 @@
     var actions = "";
     if (r.status === "pending") actions = '<button class="btn btn-p" data-act="mark-paid" data-id="' + esc(r.id) + '">Mark as paid</button><button class="btn btn-g" data-act="msg-reminder" data-id="' + esc(r.id) + '">Send payment reminder</button><button class="btn btn-danger" data-act="cancel-res" data-id="' + esc(r.id) + '">Cancel reservation</button>';
     if (r.status === "paid") actions = (r.addon_hub && !r.hub_email_sent_at ? '<button class="btn btn-p" data-act="hub-grant" data-id="' + esc(r.id) + '">Send Builder Hub access</button>' : "") + '<button class="btn ' + (r.addon_hub && !r.hub_email_sent_at ? "btn-g" : "btn-p") + '" data-act="send-zoom" data-id="' + esc(r.id) + '">' + (fmtOf(s) === "online" ? (r.zoom_email_sent_at ? "Resend Zoom link" : "Email Zoom link") : (r.zoom_email_sent_at ? "Resend confirmation" : "Email confirmation")) + '</button><button class="btn btn-g" data-act="msg-details" data-id="' + esc(r.id) + '">Copy workshop details</button><button class="btn btn-g" data-act="move-res" data-id="' + esc(r.id) + '">Move to another batch</button><button class="btn btn-g" data-act="req-refund" data-id="' + esc(r.id) + '">Record refund request</button>';
+    if (s && fmtOf(s) === "hub") actions = actions.replace(/<button[^>]*data-act="(send-zoom|msg-details)"[^>]*>[^<]*<\/button>/g, "");
     if (r.status === "refund_requested") actions = '<button class="btn btn-p" data-act="approve-refund" data-id="' + esc(r.id) + '">Approve refund · ' + peso(r.amount) + '</button><button class="btn btn-g" data-act="move-res" data-id="' + esc(r.id) + '">Offer a seat in another batch</button><button class="btn btn-g" data-act="decline-refund" data-id="' + esc(r.id) + '">Decline refund</button>';
     if (r.status === "refunded" || r.status === "cancelled") actions = '<button class="btn btn-g" data-act="restore-res" data-id="' + esc(r.id) + '">Restore as pending</button>';
     return '<aside class="card detail" aria-label="Participant details">' +
@@ -538,7 +540,7 @@
       (r.addon_hub ? "<dt>Add-on</dt><dd>Builder Hub · " + peso(r.addon_amount) + (r.status === "paid" ? (r.hub_email_sent_at ? " · access emailed" : ' · <span class="warnTxt">access not sent yet</span>') : "") + "</dd>" : "") +
       '<dt>Reference</dt><dd style="font-family:var(--mono);font-size:12.5px">' + esc(r.ref || (r.status === "pending" ? "Awaiting payment" : "—")) + "</dd>" +
       "<dt>Source</dt><dd>" + esc(r.source) + "</dd>" +
-      (r.status === "paid" ? "<dt>" + (fmtOf(s) === "online" ? "Zoom link" : "Confirmation") + "</dt><dd>" + (r.zoom_email_sent_at ? "Emailed " + esc(fmtDT(r.zoom_email_sent_at)) : s && fmtOf(s) === "online" && !s.zoom_link ? '<span class="warnTxt">Batch has no Zoom link yet</span>' : '<span class="warnTxt">Not sent yet</span>') + "</dd>" : "") + "</dl>" +
+      (r.status === "paid" && fmtOf(s) !== "hub" ? "<dt>" + (fmtOf(s) === "online" ? "Zoom link" : "Confirmation") + "</dt><dd>" + (r.zoom_email_sent_at ? "Emailed " + esc(fmtDT(r.zoom_email_sent_at)) : s && fmtOf(s) === "online" && !s.zoom_link ? '<span class="warnTxt">Batch has no Zoom link yet</span>' : '<span class="warnTxt">Not sent yet</span>') + "</dd>" : "") + "</dl>" +
       (r.status === "refund_requested" ? '<div class="callout warn">Reason: “' + esc(r.refund_reason || "No reason given") + "”. Guarantee window ends " + esc(fmtDay(refundDeadline(r))) + ".</div>" : "") +
       (holdExpired(r) ? '<div class="callout warn">Unpaid, and the seat hold ended ' + esc(fmtDT(holdEnd(r).toISOString())) + ". The seat is free for others again. They can still finish paying by reserving again with the same email and mobile number, or you can cancel this.</div>" : "") +
       '<div style="display:grid;gap:10px"><span class="mono-label">History</span><ol class="timeline">' +

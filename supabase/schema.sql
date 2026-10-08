@@ -800,3 +800,51 @@ end;
 $$;
 revoke all on function public.reserve_seat_v4(uuid, text, text, text, text, text, text, boolean, text, text) from public;
 grant execute on function public.reserve_seat_v4(uuid, text, text, text, text, text, text, boolean, text, text) to anon, authenticated;
+
+-- =====================================================================
+-- Mix-and-match orders (several bookings, or just the Builder Hub, in one checkout)
+-- =====================================================================
+alter table public.reservations add column if not exists order_id uuid;
+create index if not exists reservations_order_idx on public.reservations(order_id);
+alter table public.sessions drop constraint if exists sessions_format_chk;
+alter table public.sessions add constraint sessions_format_chk check (format in ('online','f2f','home','hub'));
+insert into public.sessions (code, title, date, format, price, capacity, status, venue, time_label)
+select 'Builder Hub', 'PROVIDETECH Builder Hub (1 year)', '2099-12-31', 'hub', 0, 100000, 'open', '', ''
+where not exists (select 1 from public.sessions where format = 'hub');
+
+create or replace function public.reserve_order(
+  p_items jsonb, p_name text, p_email text, p_phone text, p_method text,
+  p_source text default 'Website', p_lang text default 'en', p_addon boolean default false)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_order uuid := gen_random_uuid();
+  v_ids uuid[] := '{}';
+  v_items jsonb := coalesce(p_items, '[]'::jsonb);
+  v_hub uuid;
+  it jsonb;
+  v_id uuid;
+  v_first boolean := true;
+  v_sess uuid;
+begin
+  if jsonb_typeof(v_items) <> 'array' then raise exception 'EMPTY'; end if;
+  if jsonb_array_length(v_items) > 3 then raise exception 'EMPTY'; end if;
+  if jsonb_array_length(v_items) = 0 then
+    if not coalesce(p_addon, false) or public.hub_offer_price() is null then raise exception 'EMPTY'; end if;
+    select id into v_hub from public.sessions where format = 'hub' and status = 'open' limit 1;
+    if v_hub is null then raise exception 'CLOSED'; end if;
+    v_items := jsonb_build_array(jsonb_build_object('session', v_hub));
+  end if;
+  for it in select * from jsonb_array_elements(v_items) loop
+    v_sess := (it->>'session')::uuid;
+    if v_sess = any(select s2 from unnest(v_ids) s2 join public.reservations r on r.id = s2 where r.session_id = v_sess) then raise exception 'DUPLICATE'; end if;
+    v_id := public.reserve_seat_v4(v_sess, p_name, p_email, p_phone, p_method, p_source, p_lang,
+              coalesce(p_addon, false) and v_first, coalesce(it->>'address', ''), coalesce(it->>'pref', ''));
+    v_ids := v_ids || v_id;
+    v_first := false;
+  end loop;
+  update public.reservations set order_id = v_order, pm_checkout_id = '' where id = any(v_ids);
+  return jsonb_build_object('order_id', v_order, 'ids', to_jsonb(v_ids));
+end;
+$$;
+revoke all on function public.reserve_order(jsonb, text, text, text, text, text, text, boolean) from public;
+grant execute on function public.reserve_order(jsonb, text, text, text, text, text, text, boolean) to anon, authenticated;

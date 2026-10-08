@@ -64,7 +64,7 @@
   /* =====================================================================
      DEMO DRIVER — localStorage
      ===================================================================== */
-  var STORE_KEY = "pt-demo-v2";
+  var STORE_KEY = "pt-demo-v3";
 
   function seed() {
     var today = new Date(); today.setHours(9, 0, 0, 0);
@@ -81,6 +81,7 @@
     var s07 = { id: "batch-07", code: "Batch 07", title: "AI Business Systems Workshop", date: ymd(addDays(today, 11)), time_label: "9:00 AM – 5:00 PM", venue: "Online via Zoom", zoom_link: "https://zoom.us/j/0000000000?pwd=demo", zoom_notes: "Meeting ID: 000 000 0000 · Passcode: demo", capacity: 30, price: 999, status: "open", created_at: at(30, 10, 0) };
     var s09 = { id: "f2f-01", code: "F2F 01", title: "Face-to-Face AI Workshop", format: "f2f", date: ymd(addDays(today, 18)), time_label: "9:00 AM – 5:00 PM", venue: "Cebu City (exact venue TBA)", capacity: 15, price: 5999, status: "open", created_at: at(5, 10, 0) };
     var s10 = { id: "one-on-one", code: "1-on-1", title: "1-on-1 Coaching (Door-to-Door)", format: "home", date: "2099-12-31", time_label: "", venue: "Your home or office", capacity: 30, price: 9999, status: "open", created_at: at(5, 10, 0) };
+    var s11 = { id: "builder-hub", code: "Builder Hub", title: "PROVIDETECH Builder Hub (1 year)", format: "hub", date: "2099-12-31", time_label: "", venue: "", capacity: 100000, price: 0, status: "open", created_at: at(5, 10, 0) };
     var s08 = { id: "batch-08", code: "Batch 08", title: "AI Business Systems Workshop", date: ymd(addDays(today, 39)), time_label: "9:00 AM – 5:00 PM", venue: "", capacity: 30, price: 999, status: "draft", created_at: at(2, 10, 0) };
 
     var reservations = [], n = 0;
@@ -127,7 +128,7 @@
       { id: "q-5", name: "Ana Bayan", business: "Bayan Tutorials", email: "ana@bayantutorials.example.com", phone: "9391112045", need: "Student, schedule & payment management", message: "Two branches, 180 students. Need schedules and payment tracking.", source: "Discuss Your Business Idea", status: "proposal", notes: "Proposal sent. Follow up next week.", created_at: at(6, 10, 0) },
       { id: "q-6", name: "Jun Ocampo", business: "Northpoint Realty", email: "jun@northpoint.example.com", phone: "9269990321", need: "Property & lead management", message: "Agents track leads in personal notebooks.", source: "Discuss Your Business Idea", status: "won", notes: "Project started.", created_at: at(21, 9, 30) }
     ];
-    return { v: 1, sessions: [s06, s07, s08, s09, s10], reservations: reservations, inquiries: inquiries, settings: clone(DEFAULT_SETTINGS) };
+    return { v: 1, sessions: [s06, s07, s08, s09, s10, s11], reservations: reservations, inquiries: inquiries, settings: clone(DEFAULT_SETTINGS) };
   }
 
   function load() {
@@ -170,7 +171,7 @@
     if (l === "ceb") return "ceb";
     return "en";
   }
-  function cleanFormat(f) { return ["online", "f2f", "home"].indexOf(f) >= 0 ? f : "online"; }
+  function cleanFormat(f) { return ["online", "f2f", "home", "hub"].indexOf(f) >= 0 ? f : "online"; }
   function cleanZoom(u) { u = String(u || "").trim(); return /^https:\/\/\S+$/.test(u) ? u.slice(0, 500) : ""; }
 
   var demo = {
@@ -213,6 +214,27 @@
       };
       d.reservations.push(row); save(d);
       return later({ id: row.id });
+    },
+    // Mix and match: several bookings (or just the Builder Hub) paid in one checkout → { order_id, ids }
+    reserveOrder: function (o) {
+      var self = this, items = (o.items || []).slice(0, 3), order = uid(), ids = [];
+      if (!items.length) {
+        if (!o.addon) return rejectLater(fail("EMPTY", "Choose at least one item."));
+        var hub = load().sessions.filter(function (x) { return x.format === "hub" && x.status === "open"; })[0];
+        if (!hub) return rejectLater(fail("CLOSED", "The Builder Hub isn't available right now."));
+        items = [{ session_id: hub.id }];
+      }
+      var chain = Promise.resolve();
+      items.forEach(function (it, k) {
+        chain = chain.then(function () {
+          return self.reserveSeat({ session_id: it.session_id, name: o.name, email: o.email, phone: o.phone, method: o.method, source: o.source, lang: o.lang,
+            addon: !!o.addon && k === 0, address: it.address, schedule_pref: it.schedule_pref }).then(function (r) { ids.push(r.id); });
+        });
+      });
+      return chain.then(function () {
+        var d = load(); d.reservations.forEach(function (r) { if (ids.indexOf(r.id) >= 0) r.order_id = order; }); save(d);
+        return { order_id: order, ids: ids };
+      });
     },
     startPayment: function () { return rejectLater(fail("PAYMENTS_NOT_CONFIGURED", "Demo mode uses the payment link.")); },
     submitInquiry: function (q) {
@@ -358,6 +380,8 @@
         var m = res.error.message || "Something went wrong.";
         if (/FULL/.test(m)) throw fail("FULL", "This session is full.");
         if (/CLOSED/.test(m)) throw fail("CLOSED", "This session is no longer open for reservations.");
+        if (/ADDRESS/.test(m)) throw fail("ADDRESS", "Please enter the full address where we'll visit you.");
+        if (/EMPTY/.test(m)) throw fail("EMPTY", "Choose at least one item.");
         if (/DUPLICATE|reservations_one_active_per_email/.test(m)) throw fail("DUPLICATE", "This email already has a seat in this session.");
         throw fail("DB", m);
       }
@@ -394,6 +418,14 @@
         return q(c.rpc("reserve_seat_v4", { p_session: r.session_id, p_name: cleanText(r.name, 120), p_email: cleanText(r.email, 200).toLowerCase(),
           p_phone: cleanPhone(r.phone), p_method: r.method, p_source: cleanText(r.source || "Website", 60), p_lang: cleanLang(r.lang), p_addon: !!r.addon,
           p_address: cleanText(r.address, 300), p_pref: cleanText(r.schedule_pref, 300) })).then(function (id) { return { id: id }; });
+      });
+    },
+    reserveOrder: function (o) {
+      try { validReservation({ name: o.name, email: o.email, phone: o.phone, method: o.method }); } catch (e) { return Promise.reject(e); }
+      var items = (o.items || []).slice(0, 3).map(function (it) { return { session: it.session_id, address: cleanText(it.address, 300), pref: cleanText(it.schedule_pref, 300) }; });
+      return withSb(function (c) {
+        return q(c.rpc("reserve_order", { p_items: items, p_name: cleanText(o.name, 120), p_email: cleanText(o.email, 200).toLowerCase(),
+          p_phone: cleanPhone(o.phone), p_method: o.method, p_source: cleanText(o.source || "Website", 60), p_lang: cleanLang(o.lang), p_addon: !!o.addon }));
       });
     },
     // Personal PayMongo checkout for a reservation → { checkout_url } (or { already_paid })

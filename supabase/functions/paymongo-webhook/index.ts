@@ -46,45 +46,57 @@ Deno.serve(async (req) => {
 
   const { data: r } = await db.from("reservations").select("*").eq("id", reservationId).maybeSingle();
   if (!r) return json({ ok: true, ignored: "unknown reservation" });
-  if (r.pm_payment_id === payment.id) return json({ ok: true, duplicate: true });
-  const { data: s } = await db.from("sessions").select("*").eq("id", r.session_id).maybeSingle();
+  // Mix-and-match orders: every booking in the same order is paid by this one payment.
+  let group: any[] = [r];
+  if (r.order_id) {
+    const { data: g } = await db.from("reservations").select("*").eq("order_id", r.order_id).eq("pm_checkout_id", csId).order("created_at");
+    if (g && g.length) group = g;
+  }
+  if (group.every((x) => x.pm_payment_id === payment.id)) return json({ ok: true, duplicate: true });
 
   const now = new Date().toISOString();
   const paidCentavos = Number(payment.attributes.amount || 0);
   const method = methodFrom(payment.attributes.source?.type, r.method);
-  const history = (r.history || []).slice();
+  const due = group.reduce((t, x) => t + Math.round(Number(x.amount) * 100), 0);
 
-  if (paidCentavos < Math.round(Number(r.amount) * 100)) {
-    history.push({ at: now, text: `PayMongo payment ${payment.id} was ₱${paidCentavos / 100}, less than ₱${r.amount}. Not marked as paid — please check.` });
-    await db.from("reservations").update({ history }).eq("id", r.id);
+  if (paidCentavos < due) {
+    for (const x of group) {
+      const history = (x.history || []).concat([{ at: now, text: `PayMongo payment ${payment.id} was ₱${paidCentavos / 100}, less than ₱${due / 100}. Not marked as paid — please check.` }]);
+      await db.from("reservations").update({ history }).eq("id", x.id);
+    }
     return json({ ok: true, flagged: "amount" });
   }
 
-  // 3. Mark as paid
-  const was = r.status !== "pending" && r.status !== "paid" ? ` (was ${r.status.replace("_", " ")})` : "";
-  history.push({ at: now, text: `Paid via PayMongo · ${METHOD_LABEL[method] || method} (ref ${payment.id})${was}` });
-  const { data: updated, error } = await db.from("reservations")
-    .update({ status: "paid", method, ref: payment.id, pm_payment_id: payment.id, paid_at: now, history })
-    .eq("id", r.id).select().single();
-  if (error) { console.error("update failed", error.message); return json({ error: "DB" }, 500); } // retried by PayMongo
+  for (const x of group) {
+    if (x.pm_payment_id === payment.id) continue;
+    const { data: s } = await db.from("sessions").select("*").eq("id", x.session_id).maybeSingle();
+    // Mark as paid
+    const history = (x.history || []).slice();
+    const was = x.status !== "pending" && x.status !== "paid" ? ` (was ${x.status.replace("_", " ")})` : "";
+    history.push({ at: now, text: `Paid via PayMongo · ${METHOD_LABEL[method] || method} (ref ${payment.id})${group.length > 1 ? ` · order of ${group.length}` : ""}${was}` });
+    const { data: updated, error } = await db.from("reservations")
+      .update({ status: "paid", method, ref: payment.id, pm_payment_id: payment.id, paid_at: now, history })
+      .eq("id", x.id).select().single();
+    if (error) { console.error("update failed", error.message); return json({ error: "DB" }, 500); } // retried by PayMongo
 
-  // 4. Email the Zoom link (problems are logged in the participant history, not retried)
-  if (s && !updated.zoom_email_sent_at) {
-    const sent = await sendZoomEmail(db, updated, s);
-    if (!sent.ok && sent.error !== "SEND_FAILED") {
-      const { data: cur } = await db.from("reservations").select("history").eq("id", r.id).single();
-      await db.from("reservations").update({ history: (cur?.history || []).concat([{ at: new Date().toISOString(), text: `Zoom link not emailed yet: ${sent.message}` }]) }).eq("id", r.id);
+    // Confirmation email (Zoom link / venue / 1-on-1). Problems are logged in the history, not retried.
+    if (s && s.format !== "hub" && !updated.zoom_email_sent_at) {
+      const sent = await sendZoomEmail(db, updated, s);
+      if (!sent.ok && sent.error !== "SEND_FAILED") {
+        const { data: cur } = await db.from("reservations").select("history").eq("id", x.id).single();
+        await db.from("reservations").update({ history: (cur?.history || []).concat([{ at: new Date().toISOString(), text: `Confirmation not emailed yet: ${sent.message}` }]) }).eq("id", x.id);
+      }
     }
-  }
-  // 5. Builder Hub add-on: create their member login and email the access link
-  if (updated.addon_hub) {
-    try {
-      const hub = await grantFromReservation(db, updated, siteBase(updated.site_url));
-      if (!hub.ok) console.error("hub grant", hub.error, (hub as any).message);
-    } catch (e) {
-      console.error("hub grant failed", e);
-      const { data: cur } = await db.from("reservations").select("history").eq("id", r.id).single();
-      await db.from("reservations").update({ history: (cur?.history || []).concat([{ at: new Date().toISOString(), text: `Builder Hub access not created yet: ${String((e as Error)?.message || e).slice(0, 160)}` }]) }).eq("id", r.id);
+    // Builder Hub: create their member login and email the access link
+    if (updated.addon_hub) {
+      try {
+        const hub = await grantFromReservation(db, updated, siteBase(updated.site_url));
+        if (!hub.ok) console.error("hub grant", hub.error, (hub as any).message);
+      } catch (e) {
+        console.error("hub grant failed", e);
+        const { data: cur } = await db.from("reservations").select("history").eq("id", x.id).single();
+        await db.from("reservations").update({ history: (cur?.history || []).concat([{ at: new Date().toISOString(), text: `Builder Hub access not created yet: ${String((e as Error)?.message || e).slice(0, 160)}` }]) }).eq("id", x.id);
+      }
     }
   }
   return json({ ok: true, reservation_id: r.id });

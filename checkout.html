@@ -539,7 +539,10 @@ body{margin:0}
 .choice .seats.few{color:#975400}
 .choice.is-full{opacity:.55;cursor:not-allowed}
 .prods .choice{align-items:flex-start}
-.prods .choice .dot{margin-top:2px}
+.prods .choice .dot{margin-top:2px;border-radius:6px}
+.prods .choice .dot::after{border-radius:3px}
+.sum-meta .si{align-items:flex-start}.sum-meta .si svg{margin-top:2px}
+.sum-meta .si b{font-weight:600;color:var(--ink)}
 .prod-list{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
 .prod-list li{display:flex;gap:8px;align-items:flex-start;font-size:.84rem;line-height:1.45;color:var(--ink-2)}
 .prod-list li svg{color:var(--blue);flex-shrink:0;margin-top:3px}
@@ -719,7 +722,7 @@ body{margin:0}
           </section>
 
           <section class="step-card" aria-labelledby="s2">
-            <div class="step-title"><span class="step-num">02</span><h2 id="s2" data-t="s2">Choose your workshop</h2></div>
+            <div class="step-title"><span class="step-num">02</span><h2 id="s2" data-t="s2">Choose what you want (tick one or more)</h2></div>
             <div class="choices prods" role="radiogroup" aria-labelledby="s2" id="products"></div>
             <h3 class="sub-h" id="sessH" data-t="sessH">Pick a date</h3>
             <div class="choices" role="radiogroup" aria-labelledby="sessH" id="sessions"></div>
@@ -805,17 +808,14 @@ body{margin:0}
         <div class="sum-top">
           <span class="sum-tag" data-t="sumTag">Order summary</span>
           <h3 id="sumProduct">AI Business Systems Workshop · 1 Seat</h3>
-          <div class="sum-meta">
-            <div><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.6"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span id="sumSession" data-t="pickSession">Pick a session</span></div>
-            <div><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="3" width="13" height="9" rx="1.5"/><path d="M5.5 14.5h5"/></svg><span id="sumFormat">Live, hands-on session</span></div>
-          </div>
+          <div class="sum-meta" id="sumItems"></div>
         </div>
         <div class="sum-sec" id="bonusSec">
           <h4 data-t="included">Bonuses included</h4>
           <ul class="incl" id="bonusList"></ul>
         </div>
         <div class="sum-sec">
-          <div class="line"><span id="seatLbl">Workshop seat</span><span id="seatPrice">₱999.00</span></div>
+          <div id="seatLines" style="display:grid;gap:12px"></div>
           <div class="line" id="bonusLine"><span data-t="bonusLine">Bonuses</span><span class="muted" data-t="freeLine">Included</span></div>
           <div class="line" id="hubLine" hidden><span data-t="hubLine">Builder Hub (1 year)</span><span id="hubLinePrice">₱1,999.00</span></div>
           <div class="line total"><span data-t="total">Total</span><span id="sumTotal">₱999</span></div>
@@ -848,7 +848,7 @@ tl:{errDup:"May upuan na ang email na ito sa session na ito. Tingnan ang inyong 
 intro:"Matutong gawing gumaganang digital system ang tunay na problema ng negosyo gamit ang AI. Ilagay ang inyong detalye, pumili ng session, at piliin kung paano kayo magbabayad.",
 s1:"Ang inyong detalye",name:"Buong pangalan",email:"Email",emailHint:"Dito ipapadala ang access link at resibo.",phone:"Mobile number",phoneHint:"Para sa text reminder bago ang session.",
 errName:"Ilagay ang inyong buong pangalan.",errEmail:"Maglagay ng tamang email, gaya ng pangalan@email.com.",errPhone:"Maglagay ng 10-digit na PH mobile number, gaya ng 917 123 4567.",
-s2:"Pumili ng workshop",errSession:"Pumili ng session para magpatuloy.",s3:"Paraan ng pagbabayad",card:"Credit Card",ewallet:"E-wallet",errPay:"Piliin kung paano kayo magbabayad.",
+s2:"Piliin ang gusto mo (puwedeng higit sa isa)",errSession:"Pumili ng session para magpatuloy.",s3:"Paraan ng pagbabayad",card:"Credit Card",ewallet:"E-wallet",errPay:"Piliin kung paano kayo magbabayad.",
 payNote:"Tatapusin ninyo ang bayad sa secure na page ng aming payment partner. Hindi nakikita o itinatago ng PROVIDETECH ang detalye ng inyong card o e-wallet.",
 agree:"Sumasang-ayon ako sa mga tuntunin ng workshop at sa 7-day refund policy.",errAgree:"Sumang-ayon muna sa mga tuntunin para magpatuloy.",
 submit:"Magpatuloy sa Secure na Pagbabayad",m1:"May kasamang bonus",m2:"7-day guarantee",
@@ -856,12 +856,12 @@ doneH:"Halos naka-reserve na ang inyong upuan",doneP:"Isang hakbang na lang: tap
 payNow:"Magbayad ng ₱999 nang Secure",upTag:"Idagdag sa order mo — limitadong panahon",upKicker:"Bonus · {pct}% off · dito lang sa page na ito",upTitle:"OO — idagdag ang PROVIDETECH Builder Hub",up1:"PROVIDETECH Builder Hub — buong access sa loob ng 1 taon (courses, prompts, templates)",up2:"Lahat ng nakaraang live build recording, buo mula simula hanggang dulo",up3:"Step-by-step na AI build tutorials, nadadagdagan bawat buwan",up4:"Prompt library at ready-to-use na AI templates",up5:"Pribadong community: magtanong, mag-share ng wins, humingi ng tulong",up6:"24/7 access — matuto sa sarili mong oras",upSave:"Makatipid ng {amt}",upInstant:"⚡ Agad na access pagkabayad mo",hubLine:"Builder Hub (1 taon)",rAddon:"Dagdag",paidHub:" Papunta na rin ang email para sa Builder Hub access mo.",holdTimer:"Naka-hold ang upuan mo nang {t} habang nagbabayad ka.",redirecting:"Binubuksan ang secure na PayMongo payment page…",paidH:"Natanggap na ang bayad. Pasok na kayo!",readTerms:"Basahin ang Terms",readPrivacy:"Privacy Policy",spamH:"Wala sa inbox? Tingnan ang Spam folder.",spam1:"Sa Gmail, buksan ang Spam (pindutin ang ☰ Menu sa phone), tapos tingnan din ang Promotions at Updates tab.",spam2:"O i-search sa email ang PROVIDETECH.",spam3:"Nasa Spam ba? Buksan ito at pindutin ang Report not spam para sa inbox na dumating ang mga susunod naming email.",spam4:"Wala pa rin pagkalipas ng 15 minuto? Mag-message sa amin mula sa homepage at ipapadala namin ulit.",paidP:"Salamat! Papunta na sa inyong email ang Zoom link. Karaniwang dumarating ito sa loob ng ilang minuto. Hiwalay na ipapadala ng PayMongo ang inyong resibo.",home:"Bumalik sa homepage",cancelled:"Hindi natapos ang bayad. Naka-hold pa ang inyong upuan, kaya puwede kayong magbayad ulit sa ibaba.",edit:"I-edit ang aking detalye",sumTag:"Buod ng order",product:"AI Business Systems Workshop · 1 Upuan",pickSession:"Pumili ng session",format:"Live at hands-on na session",
 included:"Kasamang bonus",seat:"Upuan sa workshop",bonusLine:"Mga bonus",freeLine:"Kasama na",total:"Kabuuan",
 gH:"7-day money-back guarantee",gP:"Kung hindi angkop sa inyo ang workshop, humiling ng buong refund sa loob ng 7 araw mula sa pagbili.",
-help:"May tanong bago magbayad? Mag-message sa amin mula sa homepage.",rName:"Pangalan",rSession:"Session",rPay:"Bayad",sessH:"Pumili ng petsa",pOnline:"Online Workshop (Zoom)",pOnlineSub:"Live at hands-on na group session sa Zoom",pF2f:"Face-to-Face Workshop",pF2fSub:"Harapang group class sa nakatakdang petsa",pHome:"1-on-1 Coaching · Door-to-Door",pHomeSub:"Pupuntahan ka namin sa bahay o opisina at sabay nating bubuuin ang system mo",homeNote:"Pupuntahan ka namin. Sabihin kung saan at kailan ka karaniwang libre, at tatawagan o ite-text ka namin sa loob ng 24 oras para kumpirmahin ang schedule.",address:"Address kung saan ka namin pupuntahan",errAddress:"Ilagay ang buong address (bahay, kalye, barangay, lungsod).",pref:"Gusto mong araw at oras (opsyonal)",homeFull:"Fully booked ang 1-on-1 coaching ngayon. Mag-message sa amin mula sa homepage.",noFmt:"Wala pang bukas na petsa para dito. Mag-message sa amin mula sa homepage at sasabihan ka namin.",sumOnline:"AI Business Systems Workshop · 1 Upuan",sumF2f:"Face-to-Face AI Workshop · 1 Upuan",sumHome:"1-on-1 Coaching · Door-to-Door",fmtOnline:"Live at hands-on na session sa Zoom",fmtF2f:"Harapang klase, hands-on",fmtHome:"Pupuntahan ka namin sa bahay o opisina",schedHome:"Schedule: kukumpirmahin sa tawag o text",seatHome:"1-on-1 coaching visit",rService:"Serbisyo",rAddress:"Address",doneHHome:"Halos tapos na ang booking mo",holdTimerHome:"Naka-hold ang booking mo nang {t} habang nagbabayad ka.",paidHHome:"Natanggap na ang bayad. Naka-book ka na!",paidPHome:"Salamat! Tatawagan o ite-text ka namin sa loob ng 24 oras para kumpirmahin ang petsa at oras ng visit. Papunta na sa email mo ang confirmation, at hiwalay na ipapadala ng PayMongo ang resibo.",paidPF2f:"Salamat! Papunta na sa email mo ang seat confirmation kasama ang detalye ng venue. Karaniwang dumarating ito sa loob ng ilang minuto. Hiwalay na ipapadala ng PayMongo ang resibo.",bOn1:"Sumali nang live sa Zoom kahit nasaan ka",bOn2:"Bumuo ng gumaganang system para sa negosyo mo gamit ang AI, step by step",bOn3:"Magtanong nang live habang bumubuo",bOn4:"Magdala ng laptop at stable na internet",bF1:"Harapang klase sa aming venue sa nakatakdang petsa",bF2:"Gagabayan ka ng coach mismo sa mesa mo, step by step",bF3:"Bumuo ng gumaganang system para sa negosyo mo at iuwi ito",bF4:"Makilala at matuto kasama ang ibang business owner",bF5:"Magdala ng laptop at charger",bH1:"Pupuntahan ka namin sa bahay o opisina",bH2:"Ikaw at ang coach mo lang, magkatabi",bH3:"Nakatuon sa sarili mong problema sa negosyo",bH4:"Matuto sa sarili mong bilis at magtanong ng kahit ano",bH5:"Tatawagan o ite-text ka namin sa loob ng 24 oras para sa schedule"},
+help:"May tanong bago magbayad? Mag-message sa amin mula sa homepage.",rName:"Pangalan",rSession:"Session",rPay:"Bayad",sessH:"Pumili ng petsa",pOnline:"Online Workshop (Zoom)",pOnlineSub:"Live at hands-on na group session sa Zoom",pF2f:"Face-to-Face Workshop",pF2fSub:"Harapang group class sa nakatakdang petsa",pHome:"1-on-1 Coaching · Door-to-Door",pHomeSub:"Pupuntahan ka namin sa bahay o opisina at sabay nating bubuuin ang system mo",homeNote:"Pupuntahan ka namin. Sabihin kung saan at kailan ka karaniwang libre, at tatawagan o ite-text ka namin sa loob ng 24 oras para kumpirmahin ang schedule.",address:"Address kung saan ka namin pupuntahan",errAddress:"Ilagay ang buong address (bahay, kalye, barangay, lungsod).",pref:"Gusto mong araw at oras (opsyonal)",homeFull:"Fully booked ang 1-on-1 coaching ngayon. Mag-message sa amin mula sa homepage.",noFmt:"Wala pang bukas na petsa para dito. Mag-message sa amin mula sa homepage at sasabihan ka namin.",sumOnline:"AI Business Systems Workshop · 1 Upuan",sumF2f:"Face-to-Face AI Workshop · 1 Upuan",sumHome:"1-on-1 Coaching · Door-to-Door",fmtOnline:"Live at hands-on na session sa Zoom",fmtF2f:"Harapang klase, hands-on",fmtHome:"Pupuntahan ka namin sa bahay o opisina",schedHome:"Schedule: kukumpirmahin sa tawag o text",seatHome:"1-on-1 coaching visit",rService:"Serbisyo",rAddress:"Address",doneHHome:"Halos tapos na ang booking mo",holdTimerHome:"Naka-hold ang booking mo nang {t} habang nagbabayad ka.",paidHHome:"Natanggap na ang bayad. Naka-book ka na!",paidPHome:"Salamat! Tatawagan o ite-text ka namin sa loob ng 24 oras para kumpirmahin ang petsa at oras ng visit. Papunta na sa email mo ang confirmation, at hiwalay na ipapadala ng PayMongo ang resibo.",paidPF2f:"Salamat! Papunta na sa email mo ang seat confirmation kasama ang detalye ng venue. Karaniwang dumarating ito sa loob ng ilang minuto. Hiwalay na ipapadala ng PayMongo ang resibo.",noPick:"Walang naka-tick na workshop. Puwede mo pa ring kunin ang Builder Hub lang sa ibaba.",pickOne:"Mag-tick ng kahit isang workshop sa itaas.",pickDateFor:"Pumili ng petsa",errNone:"Mag-tick ng kahit isang workshop, o idagdag ang Builder Hub sa ibaba.",yourOrder:"Ang order mo",hubOnly:"PROVIDETECH Builder Hub (1 taon)",seatF2f:"Upuan sa face-to-face",paidPHub:"Salamat! Papunta na ang email para sa Builder Hub access mo. Karaniwang dumarating ito sa loob ng ilang minuto. Hiwalay na ipapadala ng PayMongo ang resibo.",paidPMulti:"Salamat! Papunta na sa email mo ang confirmation para sa bawat item sa order mo. Karaniwang dumarating ang mga ito sa loob ng ilang minuto. Hiwalay na ipapadala ng PayMongo ang resibo.",paidHomeNote:" Para sa 1-on-1 coaching mo, tatawagan o ite-text ka namin sa loob ng 24 oras para sa schedule.",bOn1:"Sumali nang live sa Zoom kahit nasaan ka",bOn2:"Bumuo ng gumaganang system para sa negosyo mo gamit ang AI, step by step",bOn3:"Magtanong nang live habang bumubuo",bOn4:"Magdala ng laptop at stable na internet",bF1:"Harapang klase sa aming venue sa nakatakdang petsa",bF2:"Gagabayan ka ng coach mismo sa mesa mo, step by step",bF3:"Bumuo ng gumaganang system para sa negosyo mo at iuwi ito",bF4:"Makilala at matuto kasama ang ibang business owner",bF5:"Magdala ng laptop at charger",bH1:"Pupuntahan ka namin sa bahay o opisina",bH2:"Ikaw at ang coach mo lang, magkatabi",bH3:"Nakatuon sa sarili mong problema sa negosyo",bH4:"Matuto sa sarili mong bilis at magtanong ng kahit ano",bH5:"Tatawagan o ite-text ka namin sa loob ng 24 oras para sa schedule"},
 ceb:{errDup:"Naa nay lingkoranan kining email sa kini nga session. Susiha ang inyong inbox para sa reservation, o pag-message kanamo gikan sa homepage kung kinahanglan mo og tabang.",payGcash:"Pagbayad via GCash",payCard:"Pagbayad via Credit Card",payQrph:"Pagbayad via Bangko gamit ang QRPH",subGcash:"E-wallet app",subCard:"Visa · Mastercard",subQrph:"Bisan unsang bank o e-wallet app",qrphShort:"Bangko via QRPH",tipGcash:"Mobayad via GCash? Ayaw i-screenshot ang QR — mo-expire kini sulod sa 60 segundos. Sa phone: i-tap ang naa sa ibabaw ug i-confirm sa inyong GCash app. Sa desktop: i-scan direkta ang QR gamit ang GCash camera sa inyong phone (ayaw pagkuha og litrato).",loadingS:"Gikarga ang mga session…",noSess:"Walay bukas nga session karon. Pag-message kanamo gikan sa homepage ug among isulti kung bukas na ang sunod nga batch.",tba:"I-anunsyo pa ang lugar o link",full:"Puno na",seatLeft:"lingkoranan na lang",seatsLeft:"lingkoranan na lang",errFull:"Pasayloa, napuno na kana nga session. Pagpili og laing session.",errClosed:"Sirado na kana nga session. Pagpili og laing session.",errSave:"Wala namo ma-save ang inyong reservation. Susiha ang koneksyon ug sulayi pag-usab.",errLoad:"Dili namo ma-load ang mga session. I-refresh ang page.",secure:"Secure checkout",back:"Balik sa AI Workshops",eyebrow:"AI Business Systems Workshop",h1:"I-reserve ang Inyong Lingkoranan",
 intro:"Kat-oni ang paghimo sa tinuod nga problema sa negosyo nga usa ka digital system nga magamit gamit ang AI. Isulod ang inyong detalye, pagpili og session, ug pilia kung unsaon ninyo pagbayad.",
 s1:"Ang inyong detalye",name:"Tibuok ngalan",email:"Email",emailHint:"Diri ipadala ang access link ug resibo.",phone:"Mobile number",phoneHint:"Para sa text reminder sa dili pa ang session.",
 errName:"Isulod ang inyong tibuok ngalan.",errEmail:"Pagsulod og hustong email, sama sa ngalan@email.com.",errPhone:"Pagsulod og 10-digit nga PH mobile number, sama sa 917 123 4567.",
-s2:"Pagpili og workshop",errSession:"Pagpili og session aron makapadayon.",s3:"Paagi sa pagbayad",card:"Credit Card",ewallet:"E-wallet",errPay:"Pilia kung unsaon ninyo pagbayad.",
+s2:"Pilia ang imong gusto (pwede labaw sa usa)",errSession:"Pagpili og session aron makapadayon.",s3:"Paagi sa pagbayad",card:"Credit Card",ewallet:"E-wallet",errPay:"Pilia kung unsaon ninyo pagbayad.",
 payNote:"Mahuman ninyo ang bayad sa secure nga page sa among payment partner. Dili makita o tipigan sa PROVIDETECH ang detalye sa inyong card o e-wallet.",
 agree:"Mouyon ko sa mga termino sa workshop ug sa 7-day refund policy.",errAgree:"Uyoni una ang mga termino aron makapadayon.",
 submit:"Padayon sa Secure nga Pagbayad",m1:"Apil ang mga bonus",m2:"7-day guarantee",
@@ -869,7 +869,7 @@ doneH:"Hapit na ma-reserve ang inyong lingkoranan",doneP:"Usa na lang ka lakang:
 payNow:"Pagbayad og ₱999 nga Secure",upTag:"Idugang sa imong order — limitado nga panahon",upKicker:"Bonus · {pct}% off · dinhi ra niini nga page",upTitle:"OO — idugang ang PROVIDETECH Builder Hub",up1:"PROVIDETECH Builder Hub — tibuok access sulod sa 1 ka tuig (courses, prompts, templates)",up2:"Tanang nangaging live build recording, tibuok gikan sugod hangtod katapusan",up3:"Step-by-step nga AI build tutorials, nagdugang matag bulan",up4:"Prompt library ug ready-to-use nga AI templates",up5:"Pribadong community: pangutana, ipaambit ang wins, pangayo og tabang",up6:"24/7 access — pagkat-on sa imong kaugalingong oras",upSave:"Makadaginot og {amt}",upInstant:"⚡ Dayon nga access human ka mobayad",hubLine:"Builder Hub (1 ka tuig)",rAddon:"Dugang",paidHub:" Padulong na usab ang email para sa imong Builder Hub access.",holdTimer:"Naka-hold ang imong lingkoranan sulod sa {t} samtang nagbayad ka.",redirecting:"Giablihan ang secure nga PayMongo payment page…",paidH:"Nadawat na ang bayad. Sulod na mo!",readTerms:"Basaha ang Terms",readPrivacy:"Privacy Policy",spamH:"Wala sa inbox? Susiha ang Spam folder.",spam1:"Sa Gmail, ablihi ang Spam (pindota ang ☰ Menu sa phone), dayon susiha usab ang Promotions ug Updates nga tab.",spam2:"O i-search sa imong email ang PROVIDETECH.",spam3:"Naa ba sa Spam? Ablihi kini ug pindota ang Report not spam aron sa inbox na moabot ang among sunod nga mga email.",spam4:"Wala gihapon human sa 15 minutos? Pag-message kanamo gikan sa homepage ug ipadala namo pag-usab.",paidP:"Salamat! Padulong na sa inyong email ang Zoom link. Kasagaran moabot kini sulod sa pipila ka minuto. Lahi nga ipadala sa PayMongo ang inyong resibo.",home:"Balik sa homepage",cancelled:"Wala nahuman ang bayad. Naka-hold pa ang inyong lingkoranan, busa mahimo mo pang mobayad pag-usab sa ubos.",edit:"I-edit ang akong detalye",sumTag:"Summary sa order",product:"AI Business Systems Workshop · 1 Lingkoranan",pickSession:"Pagpili og session",format:"Live ug hands-on nga session",
 included:"Apil nga bonus",seat:"Lingkoranan sa workshop",bonusLine:"Mga bonus",freeLine:"Apil na",total:"Total",
 gH:"7-day money-back guarantee",gP:"Kung dili haom kaninyo ang workshop, pangayo og tibuok refund sulod sa 7 ka adlaw gikan sa pagpalit.",
-help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage.",rName:"Ngalan",rSession:"Session",rPay:"Bayad",sessH:"Pagpili og petsa",pOnline:"Online Workshop (Zoom)",pOnlineSub:"Live ug hands-on nga group session sa Zoom",pF2f:"Face-to-Face Workshop",pF2fSub:"Atubangang group class sa gitakdang petsa",pHome:"1-on-1 Coaching · Door-to-Door",pHomeSub:"Adtoon ka namo sa balay o opisina ug dungan natong himoon ang imong system",homeNote:"Adtoon ka namo. Isulti kung asa ug kanus-a ka kasagaran libre, ug tawagan o i-text ka namo sulod sa 24 oras aron kumpirmahon ang schedule.",address:"Address diin ka namo adtoon",errAddress:"Isulod ang tibuok address (balay, dalan, barangay, siyudad).",pref:"Gusto nimong adlaw ug oras (opsyonal)",homeFull:"Fully booked ang 1-on-1 coaching karon. Pag-message kanamo gikan sa homepage.",noFmt:"Wala pay bukas nga petsa para niini. Pag-message kanamo gikan sa homepage ug among isulti kanimo.",sumOnline:"AI Business Systems Workshop · 1 Lingkoranan",sumF2f:"Face-to-Face AI Workshop · 1 Lingkoranan",sumHome:"1-on-1 Coaching · Door-to-Door",fmtOnline:"Live ug hands-on nga session sa Zoom",fmtF2f:"Atubangang klase, hands-on",fmtHome:"Adtoon ka namo sa balay o opisina",schedHome:"Schedule: kumpirmahon pinaagi sa tawag o text",seatHome:"1-on-1 coaching visit",rService:"Serbisyo",rAddress:"Address",doneHHome:"Hapit na mahuman ang imong booking",holdTimerHome:"Naka-hold ang imong booking sulod sa {t} samtang nagbayad ka.",paidHHome:"Nadawat na ang bayad. Naka-book na ka!",paidPHome:"Salamat! Tawagan o i-text ka namo sulod sa 24 oras aron kumpirmahon ang petsa ug oras sa visit. Padulong na sa imong email ang confirmation, ug lahi nga ipadala sa PayMongo ang resibo.",paidPF2f:"Salamat! Padulong na sa imong email ang seat confirmation uban ang detalye sa venue. Kasagaran moabot kini sulod sa pipila ka minuto. Lahi nga ipadala sa PayMongo ang resibo.",bOn1:"Apil nga live sa Zoom bisan asa ka",bOn2:"Paghimo og system nga magamit sa imong negosyo gamit ang AI, step by step",bOn3:"Pangutana nga live samtang nagahimo",bOn4:"Pagdala og laptop ug stable nga internet",bF1:"Atubangang klase sa among venue sa gitakdang petsa",bF2:"Giyahan ka sa coach mismo sa imong lamesa, step by step",bF3:"Paghimo og system nga magamit sa imong negosyo ug iuli kini",bF4:"Ilaila ug pagkat-on uban sa ubang business owner",bF5:"Pagdala og laptop ug charger",bH1:"Adtoon ka namo sa balay o opisina",bH2:"Ikaw ug ang imong coach ra, magtapad",bH3:"Nakatutok sa imong kaugalingong problema sa negosyo",bH4:"Pagkat-on sa imong kaugalingong dagan ug pangutana bisan unsa",bH5:"Tawagan o i-text ka namo sulod sa 24 oras para sa schedule"}
+help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage.",rName:"Ngalan",rSession:"Session",rPay:"Bayad",sessH:"Pagpili og petsa",pOnline:"Online Workshop (Zoom)",pOnlineSub:"Live ug hands-on nga group session sa Zoom",pF2f:"Face-to-Face Workshop",pF2fSub:"Atubangang group class sa gitakdang petsa",pHome:"1-on-1 Coaching · Door-to-Door",pHomeSub:"Adtoon ka namo sa balay o opisina ug dungan natong himoon ang imong system",homeNote:"Adtoon ka namo. Isulti kung asa ug kanus-a ka kasagaran libre, ug tawagan o i-text ka namo sulod sa 24 oras aron kumpirmahon ang schedule.",address:"Address diin ka namo adtoon",errAddress:"Isulod ang tibuok address (balay, dalan, barangay, siyudad).",pref:"Gusto nimong adlaw ug oras (opsyonal)",homeFull:"Fully booked ang 1-on-1 coaching karon. Pag-message kanamo gikan sa homepage.",noFmt:"Wala pay bukas nga petsa para niini. Pag-message kanamo gikan sa homepage ug among isulti kanimo.",sumOnline:"AI Business Systems Workshop · 1 Lingkoranan",sumF2f:"Face-to-Face AI Workshop · 1 Lingkoranan",sumHome:"1-on-1 Coaching · Door-to-Door",fmtOnline:"Live ug hands-on nga session sa Zoom",fmtF2f:"Atubangang klase, hands-on",fmtHome:"Adtoon ka namo sa balay o opisina",schedHome:"Schedule: kumpirmahon pinaagi sa tawag o text",seatHome:"1-on-1 coaching visit",rService:"Serbisyo",rAddress:"Address",doneHHome:"Hapit na mahuman ang imong booking",holdTimerHome:"Naka-hold ang imong booking sulod sa {t} samtang nagbayad ka.",paidHHome:"Nadawat na ang bayad. Naka-book na ka!",paidPHome:"Salamat! Tawagan o i-text ka namo sulod sa 24 oras aron kumpirmahon ang petsa ug oras sa visit. Padulong na sa imong email ang confirmation, ug lahi nga ipadala sa PayMongo ang resibo.",paidPF2f:"Salamat! Padulong na sa imong email ang seat confirmation uban ang detalye sa venue. Kasagaran moabot kini sulod sa pipila ka minuto. Lahi nga ipadala sa PayMongo ang resibo.",noPick:"Walay naka-tick nga workshop. Mahimo ra gihapon nimo kuhaon ang Builder Hub ra sa ubos.",pickOne:"Pag-tick og bisan usa ka workshop sa ibabaw.",pickDateFor:"Pagpili og petsa",errNone:"Pag-tick og bisan usa ka workshop, o idugang ang Builder Hub sa ubos.",yourOrder:"Imong order",hubOnly:"PROVIDETECH Builder Hub (1 ka tuig)",seatF2f:"Lingkoranan sa face-to-face",paidPHub:"Salamat! Padulong na ang email para sa imong Builder Hub access. Kasagaran moabot kini sulod sa pipila ka minuto. Lahi nga ipadala sa PayMongo ang resibo.",paidPMulti:"Salamat! Padulong na sa imong email ang confirmation para sa matag item sa imong order. Kasagaran moabot kini sulod sa pipila ka minuto. Lahi nga ipadala sa PayMongo ang resibo.",paidHomeNote:" Para sa imong 1-on-1 coaching, tawagan o i-text ka namo sulod sa 24 oras para sa schedule.",bOn1:"Apil nga live sa Zoom bisan asa ka",bOn2:"Paghimo og system nga magamit sa imong negosyo gamit ang AI, step by step",bOn3:"Pangutana nga live samtang nagahimo",bOn4:"Pagdala og laptop ug stable nga internet",bF1:"Atubangang klase sa among venue sa gitakdang petsa",bF2:"Giyahan ka sa coach mismo sa imong lamesa, step by step",bF3:"Paghimo og system nga magamit sa imong negosyo ug iuli kini",bF4:"Ilaila ug pagkat-on uban sa ubang business owner",bF5:"Pagdala og laptop ug charger",bH1:"Adtoon ka namo sa balay o opisina",bH2:"Ikaw ug ang imong coach ra, magtapad",bH3:"Nakatutok sa imong kaugalingong problema sa negosyo",bH4:"Pagkat-on sa imong kaugalingong dagan ug pangutana bisan unsa",bH5:"Tawagan o i-text ka namo sulod sa 24 oras para sa schedule"}
 };
 (function(){
   var root=document.documentElement;
@@ -894,7 +894,7 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
   sel.addEventListener('change',function(){lang=sel.value;try{localStorage.setItem('pt-lang',lang)}catch(e){}applyLang()});
 
   /* sessions + bonuses */
-  var box=document.getElementById('sessions'),chosen=null,prod=null;
+  var box=document.getElementById('sessions'),picked={},chosen={},inited=false;
   var PRODUCTS=[
     {f:'online',k:'pOnline',en:'Online Workshop (Zoom)',sk:'pOnlineSub',sub:'Live, hands-on group session on Zoom',
       b:[['bOn1','Join live on Zoom from anywhere'],['bOn2','Build a working system for your business with AI, step by step'],['bOn3','Ask questions live while you build'],['bOn4','Bring a laptop and a stable internet connection']]},
@@ -905,13 +905,13 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
   ];
   function fmtOf(s){return (s&&s.format)||'online'}
   function inFmt(f){return (SESSIONS||[]).filter(function(x){return fmtOf(x)===f})}
-  function curSession(){return (SESSIONS||[]).filter(function(x){return x.id===chosen})[0]||null}
+  function prodOf(f){return PRODUCTS.filter(function(p){return p.f===f})[0]}
   function homeSession(){var h=inFmt('home');return h.filter(function(x){return x.seats_left>0})[0]||h[0]||null}
-  function setProd(f){
-    prod=f;var s=curSession();
-    if(!s||fmtOf(s)!==f){chosen=null;
-      if(f==='home'){var h=homeSession();if(h&&h.seats_left>0)chosen=h.id}
-      else{var open=inFmt(f).filter(function(x){return x.seats_left>0});if(open.length===1)chosen=open[0].id}}
+  function sessFor(f){if(f==='home'){var h=homeSession();return h&&h.seats_left>0?h:null}return (SESSIONS||[]).filter(function(x){return x.id===chosen[f]&&x.seats_left>0})[0]||null}
+  function pickedList(){return PRODUCTS.filter(function(p){return picked[p.f]}).map(function(p){return p.f})}
+  function togglePick(f,on){
+    picked[f]=!!on;
+    if(on&&f!=='home'&&!sessFor(f)){var open=inFmt(f).filter(function(x){return x.seats_left>0});chosen[f]=open.length===1?open[0].id:null}
     document.getElementById('errSession').hidden=true;
   }
   function renderProducts(){
@@ -922,38 +922,44 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
       var list=inFmt(p.f);if(!list.length&&p.f!=='f2f')return;
       var min=list.length?Math.min.apply(null,list.map(function(x){return Number(x.price)||0})):5999;
       var l=document.createElement('label');l.className='choice';
-      l.innerHTML='<input type="radio" name="product"><span class="dot"></span><span class="sess-main"><b></b><small></small><ul class="prod-list"></ul></span><span class="prod-price"></span>';
+      l.innerHTML='<input type="checkbox" name="product"><span class="dot"></span><span class="sess-main"><b></b><small></small><ul class="prod-list"></ul></span><span class="prod-price"></span>';
       var ul=l.querySelector('.prod-list');p.b.forEach(function(x){var li=document.createElement('li');li.innerHTML=check;var t=document.createElement('span');t.textContent=tr(x[0],x[1]);li.appendChild(t);ul.appendChild(li)});
-      var inp=l.querySelector('input');inp.value=p.f;if(prod===p.f)inp.checked=true;
+      var inp=l.querySelector('input');inp.value=p.f;inp.checked=!!picked[p.f];
       l.querySelector('b').textContent=tr(p.k,p.en);l.querySelector('small').textContent=tr(p.sk,p.sub);
       l.querySelector('.prod-price').textContent=peso(min);
-      inp.addEventListener('change',function(){setProd(p.f);renderSessions();updateSummary()});
+      inp.addEventListener('change',function(){togglePick(p.f,inp.checked);renderSessions();updateSummary()});
       pb.appendChild(l);
     });
   }
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function dateLabel(ymd){var p=String(ymd).split('-'),d=new Date(+p[0],+p[1]-1,+p[2]);try{return d.toLocaleDateString(lang==='en'?'en-PH':'fil-PH',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}catch(e){return ymd}}
+  function noteEl(t){var n=document.createElement('p');n.className='sess-note';n.textContent=t;return n}
   function renderSessions(){
     box.innerHTML='';renderProducts();
-    var home=prod==='home',hb=document.getElementById('homeBox'),sh=document.getElementById('sessH');
-    hb.hidden=!home;sh.hidden=home||!SESSIONS||!SESSIONS.length;box.hidden=false;
-    if(SESSIONS===null){box.innerHTML='<p class="sess-note">'+esc(tr('loadingS','Loading sessions…'))+'</p>';return}
-    if(!SESSIONS.length){box.innerHTML='<p class="sess-note">'+esc(tr('noSess','No sessions are open right now. Message us from the homepage and we will tell you when the next batch opens.'))+'</p>';return}
-    if(home){var h=homeSession();if(h&&h.seats_left>0){box.hidden=true}else{hb.hidden=true;box.innerHTML='<p class="sess-note">'+esc(tr('homeFull','1-on-1 coaching is fully booked right now. Message us from the homepage.'))+'</p>'}return}
-    var list=inFmt(prod||'online');
-    if(!list.length){box.innerHTML='<p class="sess-note">'+esc(tr('noFmt','No dates are open for this yet. Message us from the homepage and we will let you know.'))+'</p>';return}
-    list.forEach(function(s){
-      var full=s.seats_left<=0;
-      var l=document.createElement('label');l.className='choice'+(full?' is-full':'');
-      l.innerHTML='<input type="radio" name="session"'+(full?' disabled':'')+'><span class="dot"></span><span class="sess-main"><b></b><small></small></span><span class="seats"></span>';
-      var inp=l.querySelector('input');inp.value=s.id;if(chosen===s.id&&!full)inp.checked=true;
-      l.querySelector('b').textContent=dateLabel(s.date);
-      l.querySelector('small').textContent=[s.time_label,s.venue||tr('tba','Venue or link to be announced')].filter(Boolean).join(' · ');
-      var seats=l.querySelector('.seats');
-      seats.textContent=full?tr('full','Full'):s.seats_left+' '+(s.seats_left===1?tr('seatLeft','seat left'):tr('seatsLeft','seats left'));
-      if(!full&&s.seats_left<=5)seats.classList.add('few');
-      inp.addEventListener('change',function(){chosen=s.id;document.getElementById('errSession').hidden=true;updateSummary()});
-      box.appendChild(l);
+    var hb=document.getElementById('homeBox');document.getElementById('sessH').hidden=true;hb.hidden=true;
+    if(SESSIONS===null){box.appendChild(noteEl(tr('loadingS','Loading sessions…')));return}
+    if(!SESSIONS.length){box.appendChild(noteEl(tr('noSess','No sessions are open right now. Message us from the homepage and we will tell you when the next batch opens.')));return}
+    var list=pickedList();
+    if(!list.length){box.appendChild(noteEl(HUB_OFFER&&HUB_OFFER.enabled?tr('noPick','No workshop ticked. You can still get just the Builder Hub below.'):tr('pickOne','Tick at least one workshop above.')));return}
+    list.forEach(function(f){
+      if(f==='home'){var h=homeSession();if(h&&h.seats_left>0)hb.hidden=false;else box.appendChild(noteEl(tr('homeFull','1-on-1 coaching is fully booked right now. Message us from the homepage.')));return}
+      var p=prodOf(f),head=document.createElement('h3');head.className='sub-h';head.textContent=tr('pickDateFor','Pick a date')+' · '+tr(p.k,p.en);box.appendChild(head);
+      var ss=inFmt(f);if(!ss.length){box.appendChild(noteEl(tr('noFmt','No dates are open for this yet. Message us from the homepage and we will let you know.')));return}
+      var grp=document.createElement('div');grp.className='choices';grp.setAttribute('role','radiogroup');grp.setAttribute('aria-label',head.textContent);
+      ss.forEach(function(s){
+        var full=s.seats_left<=0;
+        var l=document.createElement('label');l.className='choice'+(full?' is-full':'');
+        l.innerHTML='<input type="radio" name="session-'+f+'"'+(full?' disabled':'')+'><span class="dot"></span><span class="sess-main"><b></b><small></small></span><span class="seats"></span>';
+        var inp=l.querySelector('input');inp.value=s.id;if(chosen[f]===s.id&&!full)inp.checked=true;
+        l.querySelector('b').textContent=dateLabel(s.date);
+        l.querySelector('small').textContent=[s.time_label,s.venue||tr('tba','Venue or link to be announced')].filter(Boolean).join(' · ');
+        var seats=l.querySelector('.seats');
+        seats.textContent=full?tr('full','Full'):s.seats_left+' '+(s.seats_left===1?tr('seatLeft','seat left'):tr('seatsLeft','seats left'));
+        if(!full&&s.seats_left<=5)seats.classList.add('few');
+        inp.addEventListener('change',function(){chosen[f]=s.id;document.getElementById('errSession').hidden=true;updateSummary()});
+        grp.appendChild(l);
+      });
+      box.appendChild(grp);
     });
   }
   var check='<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8.3 3 3 7-7"/></svg>';
@@ -964,13 +970,12 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
     document.getElementById('bonusSec').hidden=!BONUSES.length;document.getElementById('bonusLine').hidden=!BONUSES.length;
     BONUSES.forEach(function(b){var li=document.createElement('li');li.innerHTML=check+'<span></span><span class="free"></span>';li.children[1].textContent=typeof b==='string'?b:pick(b);li.children[2].textContent=tr('freeLine','Included');ul.appendChild(li)});
   }
-  function sessionText(){var s=curSession();if(!s)return null;
-    if(fmtOf(s)==='home'){var pf=document.getElementById('pref').value.trim();return pf||tr('schedHome','Schedule: confirmed by call or text')}
-    return dateLabel(s.date)+(s.time_label?' · '+s.time_label:'')}
+  function sumName(f){return f==='home'?tr('sumHome','1-on-1 Coaching · Door-to-Door'):f==='f2f'?tr('sumF2f','Face-to-Face AI Workshop · 1 Seat'):tr('sumOnline','AI Business Systems Workshop · 1 Seat')}
+  function whenText(f,s){if(f==='home'){var pf=document.getElementById('pref').value.trim();return pf||tr('schedHome','Schedule: confirmed by call or text')}return s?dateLabel(s.date)+(s.time_label?' · '+s.time_label:''):null}
+  function orderItems(){return pickedList().map(function(f){var s=sessFor(f),l=inFmt(f);return {f:f,s:s,name:sumName(f),when:whenText(f,s),price:s?Number(s.price):l.length?Number(l[0].price):({online:999,f2f:5999,home:9999}[f])}})}
   function peso(n){return '₱'+Number(n).toLocaleString('en-PH')}
   function hubOn(){return !!(HUB_OFFER&&HUB_OFFER.enabled&&document.getElementById('addHub').checked)}
-  function seatPrice(){var s=curSession();if(s&&s.price!=null)return Number(s.price);var l=inFmt(prod||'online');return l.length?Number(l[0].price):({f2f:5999,home:9999}[prod]||999)}
-  function orderTotal(){return seatPrice()+(hubOn()?Number(HUB_OFFER.price)||0:0)}
+  function orderTotal(){return orderItems().reduce(function(t,x){return t+x.price},0)+(hubOn()?Number(HUB_OFFER.price)||0:0)}
   function renderOffer(){
     var box=document.getElementById('hubOffer');
     if(!HUB_OFFER||!HUB_OFFER.enabled||!(Number(HUB_OFFER.price)>0)){box.hidden=true;return}
@@ -983,11 +988,16 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
     else{cmp.hidden=true;save.hidden=true;k.textContent=tr('upTag','Add to your order — limited time')}
   }
   function updateSummary(){
-    var t=sessionText(),f=prod||'online';document.getElementById('sumSession').textContent=t||tr('pickSession','Pick a session');
-    document.getElementById('sumProduct').textContent=f==='home'?tr('sumHome','1-on-1 Coaching · Door-to-Door'):f==='f2f'?tr('sumF2f','Face-to-Face AI Workshop · 1 Seat'):tr('sumOnline','AI Business Systems Workshop · 1 Seat');
-    document.getElementById('sumFormat').textContent=f==='home'?tr('fmtHome','We visit your home or office'):f==='f2f'?tr('fmtF2f','In-person, hands-on class'):tr('fmtOnline','Live, hands-on session on Zoom');
-    document.getElementById('seatLbl').textContent=f==='home'?tr('seatHome','1-on-1 coaching visit'):tr('seat','Workshop seat');
-    document.getElementById('seatPrice').textContent=peso(seatPrice())+'.00';
+    var items=orderItems(),hon=hubOn();
+    document.getElementById('sumProduct').textContent=items.length===1&&!hon?items[0].name:!items.length&&hon?tr('hubOnly','PROVIDETECH Builder Hub (1 year)'):tr('yourOrder','Your order');
+    var si=document.getElementById('sumItems');si.innerHTML='';
+    var cal='<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.6"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg>';
+    if(!items.length&&!hon){var d0=document.createElement('div');d0.innerHTML=cal+'<span></span>';d0.lastChild.textContent=tr('pickSession','Pick a session');si.appendChild(d0)}
+    items.forEach(function(x){var d=document.createElement('div');d.className='si';d.innerHTML=cal+'<span>'+(items.length>1||hon?'<b></b><br>':'')+'<span></span></span>';
+      if(d.querySelector('b'))d.querySelector('b').textContent=x.name;d.querySelector('span span').textContent=x.when||tr('pickSession','Pick a session');si.appendChild(d)});
+    var sl=document.getElementById('seatLines');sl.innerHTML='';
+    items.forEach(function(x){var d=document.createElement('div');d.className='line';d.innerHTML='<span></span><span></span>';d.children[0].textContent=x.f==='home'?tr('seatHome','1-on-1 coaching visit'):x.f==='f2f'?tr('seatF2f','Face-to-face seat'):tr('seat','Workshop seat');d.children[1].textContent=peso(x.price)+'.00';sl.appendChild(d)});
+    document.getElementById('bonusLine').hidden=!items.length||!BONUSES.length;
     var on=hubOn(),total=orderTotal();
     document.getElementById('hubLine').hidden=!on;
     if(on)document.getElementById('hubLinePrice').textContent=peso(HUB_OFFER.price)+'.00';
@@ -1014,10 +1024,12 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
     var pay=(form.querySelector('input[name=pay]:checked')||{}).value;
     var bad={name:name.split(/\s+/).filter(Boolean).length<2,email:!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email),phone:!/^9\d{9}$/.test(ph)};
     setErr('f-name',bad.name);setErr('f-email',bad.email);setErr('f-phone',bad.phone);
-    var isHome=prod==='home',addr=document.getElementById('address').value.replace(/\s+/g,' ').trim(),pref=document.getElementById('pref').value.trim();
+    var list=pickedList(),addon=hubOn(),isHome=!!picked.home,addr=document.getElementById('address').value.replace(/\s+/g,' ').trim(),pref=document.getElementById('pref').value.trim();
     var badAddr=isHome&&addr.length<8;var fa=document.getElementById('f-address');fa.classList.toggle('invalid',badAddr);fa.querySelector('.err').hidden=!badAddr;
-    var es=!chosen,ep=!pay,ea=!document.getElementById('agree').checked;
-    document.getElementById('errSession').hidden=!es;document.getElementById('errPay').hidden=!ep;document.getElementById('errAgree').hidden=!ea;
+    var none=!list.length&&!addon,missing=list.filter(function(f){return !sessFor(f)});
+    var es=none||missing.length>0,ep=!pay,ea=!document.getElementById('agree').checked;
+    var eS=document.getElementById('errSession');eS.textContent=none?tr('errNone','Tick at least one workshop, or add the Builder Hub below.'):tr('errSession','Choose a session to continue.');
+    eS.hidden=!es;document.getElementById('errPay').hidden=!ep;document.getElementById('errAgree').hidden=!ea;
     var first=bad.name?'name':bad.email?'email':bad.phone?'phone':es?null:null;
     if(bad.name||bad.email||bad.phone||badAddr||es||ep||ea){
       if(!first&&badAddr)first='address';
@@ -1027,25 +1039,27 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
     }
     var btn=form.querySelector('button[type=submit]'),serr=document.getElementById('submitErr');
     serr.hidden=true;btn.disabled=true;btn.setAttribute('aria-busy','true');
-    var addon=hubOn();
-    PT.reserveSeat({session_id:chosen,name:name,email:email,phone:ph,method:pay,source:sourceTag(),lang:lang,addon:addon,address:isHome?addr:'',schedule_pref:isHome?pref:''}).then(function(res){
+    var items=orderItems();
+    PT.reserveOrder({items:items.map(function(x){return {session_id:x.s.id,address:x.f==='home'?addr:'',schedule_pref:x.f==='home'?pref:''}}),name:name,email:email,phone:ph,method:pay,source:sourceTag(),lang:lang,addon:addon}).then(function(res){
+      var firstId=res&&res.ids&&res.ids[0];
       btn.disabled=false;btn.removeAttribute('aria-busy');
       var link=PAYMENT_LINKS[pay]||PAYMENT_LINKS.all;
       var payName={gcash:'GCash',card:tr('card','Credit Card'),qrph:tr('qrphShort','Bank via QRPH')}[pay];
       var recap=document.getElementById('recap');recap.innerHTML='';
-      [[tr('rName','Name'),name],['Email',email],['Mobile','+63 '+ph.replace(/(\d{3})(\d{3})(\d{4})/,'$1 $2 $3')],].concat(isHome?[[tr('rService','Service'),tr('sumHome','1-on-1 Coaching · Door-to-Door')],[tr('rAddress','Address'),addr],[tr('rSession','Session'),sessionText()]]:[[tr('rSession','Session'),sessionText()]]).concat([[tr('rPay','Payment'),payName+' · '+peso(orderTotal())]]).concat(addon?[[tr('rAddon','Add-on'),'PROVIDETECH Builder Hub']]:[]).forEach(function(r){var d=document.createElement('div');d.innerHTML='<span></span><span></span>';d.children[0].textContent=r[0];d.children[1].textContent=r[1];recap.appendChild(d)});
+      [[tr('rName','Name'),name],['Email',email],['Mobile','+63 '+ph.replace(/(\d{3})(\d{3})(\d{4})/,'$1 $2 $3')],].concat(items.map(function(x){return [x.name,x.when]})).concat(isHome?[[tr('rAddress','Address'),addr]]:[]).concat([[tr('rPay','Payment'),payName+' · '+peso(orderTotal())]]).concat(addon?[[tr('rAddon','Add-on'),'PROVIDETECH Builder Hub']]:[]).forEach(function(r){var d=document.createElement('div');d.innerHTML='<span></span><span></span>';d.children[0].textContent=r[0];d.children[1].textContent=r[1];recap.appendChild(d)});
       document.getElementById('editBtn').hidden=true;
-      if(isHome)retag(document.querySelector('#done [data-t=doneH]')||document.querySelector('#done h2'),'doneHHome','Your booking is almost done');
+      var onlyHome=isHome&&list.length===1;
+      if(onlyHome)retag(document.querySelector('#done [data-t=doneH]')||document.querySelector('#done h2'),'doneHHome','Your booking is almost done');
       form.hidden=true;var done=document.getElementById('done');done.hidden=false;done.scrollIntoView({behavior:'smooth',block:'start'});
       var holdEnd=Date.now()+(Number(HOLD_HOURS)||1)*3600000;
-      try{sessionStorage.setItem('pt-last-res',JSON.stringify({id:res&&res.id,link:link,recap:recap.innerHTML,addon:addon,holdEnd:holdEnd,f:prod||'online'}))}catch(e){}
-      startHoldTimer(holdEnd,isHome);
-      openPayment(res&&res.id,link);
+      try{sessionStorage.setItem('pt-last-res',JSON.stringify({id:firstId,link:link,recap:recap.innerHTML,addon:addon,holdEnd:holdEnd,f:list.length?list.join(','):'hub'}))}catch(e){}
+      startHoldTimer(holdEnd,onlyHome);
+      openPayment(firstId,link);
     }).catch(function(err){
       btn.disabled=false;btn.removeAttribute('aria-busy');
       var msg=err&&err.code==='DUPLICATE'?tr('errDup','This email already has a seat in this session. Check your inbox for your reservation, or message us from the homepage if you need help.'):err&&err.code==='FULL'?tr('errFull','Sorry, that session just filled up. Please choose another session.'):err&&err.code==='CLOSED'?tr('errClosed','That session is no longer open. Please choose another session.'):err&&err.code==='ADDRESS'?tr('errAddress','Enter the full address (house, street, barangay, city).'):tr('errSave','We couldn\'t save your reservation. Check your connection and try again.');
       serr.textContent=msg;serr.hidden=false;serr.scrollIntoView({behavior:'smooth',block:'center'});
-      if(err&&(err.code==='FULL'||err.code==='CLOSED')){chosen=null;loadData()}
+      if(err&&(err.code==='FULL'||err.code==='CLOSED')){chosen={};loadData()}
     });
   });
   document.getElementById('editBtn').addEventListener('click',function(){document.getElementById('done').hidden=true;form.hidden=false;form.scrollIntoView({behavior:'smooth',block:'start'})});
@@ -1082,9 +1096,13 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
     var lr=null;try{lr=JSON.parse(sessionStorage.getItem('pt-last-res')||'null')}catch(e){}
     var f='online';try{f=new URLSearchParams(location.search).get('f')||(lr&&lr.f)||'online'}catch(e){}
     var ph2=document.querySelector('#paidDone h2'),pp=document.querySelector('#paidDone [data-t^=paidP]');
-    if(f==='home'){retag(ph2,'paidHHome','Payment received. You\'re booked!');retag(pp,'paidPHome','Thank you! We\'ll call or text you within 24 hours to confirm the date and time of your visit. Your confirmation email is on its way, and PayMongo sends your receipt separately.')}
+    var fs=String(f).split(',');
+    if(fs.length>1){retag(pp,'paidPMulti','Thank you! A confirmation email for each item in your order is on its way. They usually arrive within a few minutes. PayMongo sends your receipt separately.');
+      if(fs.indexOf('home')>=0){var k0='paidPMulti';pp._en+=' For your 1-on-1 coaching, we\'ll call or text you within 24 hours to set the schedule.';T.tl[k0]+=T.tl.paidHomeNote;T.ceb[k0]+=T.ceb.paidHomeNote;pp.textContent=tr(k0,pp._en)}}
+    else if(f==='hub')retag(pp,'paidPHub','Thank you! Your Builder Hub access email is on its way. It usually arrives within a few minutes. PayMongo sends your receipt separately.');
+    else if(f==='home'){retag(ph2,'paidHHome','Payment received. You\'re booked!');retag(pp,'paidPHome','Thank you! We\'ll call or text you within 24 hours to confirm the date and time of your visit. Your confirmation email is on its way, and PayMongo sends your receipt separately.')}
     else if(f==='f2f')retag(pp,'paidPF2f','Thank you! Your seat confirmation with the venue details is on its way to your email. It usually arrives within a few minutes. PayMongo sends your receipt separately.');
-    if(lr&&lr.addon){var key=pp.getAttribute('data-t');pp._en=pp._en+' Your Builder Hub access email is on its way too.';T.tl[key]=T.tl[key]+T.tl.paidHub;T.ceb[key]=T.ceb[key]+T.ceb.paidHub;pp.textContent=tr(key,pp._en)}
+    if(lr&&lr.addon&&f!=='hub'){var key=pp.getAttribute('data-t');pp._en=pp._en+' Your Builder Hub access email is on its way too.';T.tl[key]=T.tl[key]+T.tl.paidHub;T.ceb[key]=T.ceb[key]+T.ceb.paidHub;pp.textContent=tr(key,pp._en)}
     form.hidden=true;document.getElementById('done').hidden=true;
     var p=document.getElementById('paidDone');p.hidden=false;
     try{sessionStorage.removeItem('pt-last-res')}catch(e){}
@@ -1112,13 +1130,12 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
     return Promise.all([PT.publicSessions(),PT.publicSettings()]).then(function(res){
       SESSIONS=res[0]||[];var st=res[1]||{};
       PAYMENT_LINKS=st.payment_links||PAYMENT_LINKS;BONUSES=st.bonuses||[];HUB_OFFER=st.hub_offer||null;HOLD_HOURS=st.hold_hours||1;renderOffer();
-      if(!chosen){try{var want=new URLSearchParams(location.search).get('batch');var hit=SESSIONS.filter(function(x){return x.id===want&&x.seats_left>0})[0];if(hit)chosen=hit.id}catch(e){}}
-      if(!prod){var cs=curSession(),qp=null;try{qp=new URLSearchParams(location.search).get('product')}catch(e){}
-        if(cs)prod=fmtOf(cs);
-        else if(qp&&(inFmt(qp).length||qp==='f2f'))prod=qp;
-        else{var av=PRODUCTS.filter(function(p){return inFmt(p.f).some(function(x){return x.seats_left>0})})[0];prod=av?av.f:(SESSIONS[0]?fmtOf(SESSIONS[0]):'online')}
-        setProd(prod)}
-      else if(!chosen)setProd(prod);
+      if(!inited){inited=true;var q;try{q=new URLSearchParams(location.search)}catch(e){q=new URLSearchParams('')}
+        var want=q.get('batch'),hit=SESSIONS.filter(function(x){return x.id===want&&x.seats_left>0&&fmtOf(x)!=='hub'})[0];
+        if(hit){picked[fmtOf(hit)]=true;if(fmtOf(hit)!=='home')chosen[fmtOf(hit)]=hit.id}
+        else if(q.get('product')){String(q.get('product')).split(',').forEach(function(f){if(prodOf(f))togglePick(f,true)});if(/(^|,)hub(,|$)/.test(q.get('product'))&&HUB_OFFER&&HUB_OFFER.enabled)document.getElementById('addHub').checked=true}
+        else{var av=PRODUCTS.filter(function(p){return inFmt(p.f).some(function(x){return x.seats_left>0})})[0];if(av)togglePick(av.f,true)}}
+      else pickedList().forEach(function(f){if(f!=='home'&&!sessFor(f))togglePick(f,true)});
       renderSessions();renderBonuses();updateSummary();
     }).catch(function(){SESSIONS=[];renderSessions();var serr=document.getElementById('submitErr');serr.textContent=tr('errLoad','We couldn\'t load the workshop sessions. Please refresh the page.');serr.hidden=false});
   }
