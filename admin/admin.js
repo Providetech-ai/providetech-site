@@ -669,7 +669,7 @@
       return '<section class="card" style="padding:20px 22px"><div class="batch-top"><div><span class="mono-label">Course · ' + ls.length + (ls.length === 1 ? " lesson" : " lessons") + (total ? " · " + total + " min read" : "") + '</span><h2 style="font-size:18px;margin-top:4px">' + esc(c.title) + "</h2>" +
         (c.description ? '<p class="muted" style="margin:4px 0 0;max-width:70ch">' + esc(c.description) + "</p>" : "") + "</div>" + pubPill(c) + "</div>" +
         (ls.length ? '<div class="table-wrap" style="margin-top:14px"><table class="t"><thead><tr><th>#</th><th>Lesson</th><th>Reading time</th><th>Status</th><th></th></tr></thead><tbody>' + ls.map(function (l, i) {
-          return '<tr><td class="muted num">' + (i + 1) + "</td><td><b>" + esc(l.title) + "</b>" + (String(l.description || "").trim() ? "" : ' <span class="pill warn">No content</span>') + '</td><td class="muted">' + esc(l.duration_min ? l.duration_min + " min" : "—") + "</td><td>" + pubPill(l) +
+          return '<tr><td class="muted num">' + (i + 1) + "</td><td>" + (l.section ? '<small style="display:block;color:var(--ink-3);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em">' + esc(l.section) + "</small>" : "") + "<b>" + esc(l.title) + "</b>" + (String(l.description || "").trim() ? "" : ' <span class="pill warn">No content</span>') + '</td><td class="muted">' + esc(l.duration_min ? l.duration_min + " min" : "—") + "</td><td>" + pubPill(l) +
             '</td><td style="text-align:right;white-space:nowrap"><button class="btn btn-g btn-sm" data-act="lesson-edit" data-id="' + esc(l.id) + '">Edit</button> <button class="btn btn-g btn-sm" data-act="content-del" data-table="lessons" data-id="' + esc(l.id) + '">Delete</button></td></tr>';
         }).join("") + "</tbody></table></div>" : '<p class="muted" style="margin:12px 0 0">No lessons yet.</p>') +
         '<div class="batch-actions" style="margin-top:14px"><button class="btn btn-p btn-sm" data-act="lesson-new" data-id="' + esc(c.id) + '">' + I.plus + 'Add lesson</button><button class="btn btn-g btn-sm" data-act="course-edit" data-id="' + esc(c.id) + '">Edit course</button><button class="btn btn-g btn-sm" data-act="content-del" data-table="courses" data-id="' + esc(c.id) + '">Delete course</button></div></section>';
@@ -711,10 +711,12 @@
   }
   function lessonForm(l, courseId) {
     var siblings = hubContent("lessons").filter(function (x) { return x.course_id === (l ? l.course_id : courseId); });
-    l = l || { course_id: courseId, title: "", description: "", video_url: "", duration_min: "", sort: siblings.length + 1, published: true };
+    l = l || { course_id: courseId, title: "", section: (siblings[siblings.length - 1] || {}).section || "", description: "", video_url: "", duration_min: "", sort: siblings.length + 1, published: true };
+    var secList = siblings.map(function (x) { return x.section || ""; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; });
     openModal(l.id ? "Edit lesson" : "Add lesson", '<div class="form-grid">' +
       '<div class="span2">' + field(lbl("lcourse", "Course"), '<select class="input" id="lcourse" name="course_id">' + hubContent("courses").map(function (c) { return opt(c.id, c.title, l.course_id); }).join("") + "</select>") + "</div>" +
       '<div class="span2">' + field(lbl("ltitle", "Lesson title"), '<input class="input" id="ltitle" name="title" required value="' + esc(l.title) + '">') + "</div>" +
+      '<div class="span2">' + field(lbl("lsec", "Section (optional)"), '<input class="input" id="lsec" name="section" maxlength="80" list="lsec-list" placeholder="e.g. Starter Prompts" value="' + esc(l.section || "") + '"><datalist id="lsec-list">' + secList.map(function (x) { return '<option value="' + esc(x) + '">'; }).join("") + "</datalist>", "Lessons with the same section are grouped together (e.g. 01 Starter Prompts, 02 Master Prompts).") + "</div>" +
       field(lbl("ldur", "Reading time (minutes)"), '<input class="input" id="ldur" name="duration_min" type="number" min="0" step="1" value="' + esc(l.duration_min) + '">', "Leave empty to work it out automatically.") +
       field(lbl("lsort", "Order"), '<input class="input" id="lsort" name="sort" type="number" step="1" value="' + esc(l.sort) + '">') +
       '<div class="span2">' + field(lbl("ldesc", "Lesson content"), '<textarea class="input" id="ldesc" name="description" rows="16" maxlength="40000" style="font-family:var(--mono);font-size:13px;line-height:1.55" placeholder="Write the lesson here.">' + esc(l.description) + "</textarea>",
@@ -723,7 +725,7 @@
         if (f.title.trim().length < 2) throw new Error("Give the lesson a title.");
         if (f.published && !f.description.trim()) throw new Error("Write the lesson content before publishing, or untick Published.");
         var words = f.description.trim().split(/\s+/).filter(Boolean).length;
-        act(PT.admin.saveContent("lessons", { id: l.id, course_id: f.course_id, title: f.title.trim(), description: f.description.trim(), video_url: "", duration_min: Math.max(0, parseInt(f.duration_min, 10) || Math.max(1, Math.round(words / 200))), sort: parseInt(f.sort, 10) || 0, published: !!f.published }), l.id ? "Lesson saved" : "Lesson added");
+        act(PT.admin.saveContent("lessons", { id: l.id, course_id: f.course_id, title: f.title.trim(), section: (f.section || "").trim(), description: f.description.trim(), video_url: "", duration_min: Math.max(0, parseInt(f.duration_min, 10) || Math.max(1, Math.round(words / 200))), sort: parseInt(f.sort, 10) || 0, published: !!f.published }), l.id ? "Lesson saved" : "Lesson added");
       } });
   }
   function replayForm(r) {

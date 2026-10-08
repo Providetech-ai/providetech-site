@@ -158,11 +158,15 @@
     });
   }
   var DEMO_CONTENT = {
-    courses: [{ id: "c1", title: "AI Business Systems 101", description: "Turn one real business problem into a working system, step by step." }],
+    courses: [{ id: "c1", title: "AI Business Systems 101", description: "Turn one real business problem into a working system, step by step." },
+      { id: "pl", slug: "prompt-library", title: "Prompt Library", description: "Copy-paste prompts and master SPEC.md starters for real builds. Part 1: ten prompts for a simple website. Part 2: complete SPEC.md blueprints you give to Claude and say: build this." }],
     lessons: [
       { id: "l1", course_id: "c1", title: "Pick the right problem to automate", description: "## Why this matters\nStart with the task that eats the most hours.\n\n- List your weekly tasks\n- Mark the repetitive ones\n\n```\nHere are my weekly tasks: [LIST]. Which 3 should I automate first?\n```\n\n> **Try it:** write down 10 tasks you did this week.", video_url: "", duration_min: 6 },
       { id: "l2", course_id: "c1", title: "Map the workflow before you build", description: "", video_url: "https://vimeo.com/76979871", duration_min: 18 },
       { id: "l3", course_id: "c1", title: "Build your first AI assistant", description: "", video_url: "https://vimeo.com/76979871", duration_min: 25 },
+      { id: "pl1", course_id: "pl", section: "Starter Prompts", title: "10 copy-paste prompts for basic websites", description: "Use these in order.\n\n## 1) The first build\n\n```\nBuild a one-page website for [BUSINESS NAME]...\n```\n\n## 2) The look & feel pass\n\n```\nGive this site a look that earns trust from [TARGET CUSTOMERS]...\n```", video_url: "", duration_min: 8 },
+      { id: "pl2", course_id: "pl", section: "Master Prompts — SPEC.md starters", title: "How to use a master prompt", description: "A master prompt is a complete blueprint.", video_url: "", duration_min: 5 },
+      { id: "pl3", course_id: "pl", section: "Master Prompts — SPEC.md starters", title: "Master prompt — Inventory System", description: "```\n# SPEC.md: Inventory System\n## Overview\n...\n```", video_url: "", duration_min: 10 },
     ],
     replays: [{ id: "r1", title: "Live build: booking system for a clinic", description: "Full session, from blank page to working bookings.", video_url: "https://vimeo.com/76979871", recorded_on: "2026-09-20", duration_min: 118 }],
     prompts: [
@@ -441,7 +445,7 @@
   }
   function viewHome() {
     var m = S.member;
-    var counts = { replays: C().replays.length, learning: C().courses.length, prompts: C().prompts.length };
+    var counts = { replays: C().replays.length, learning: C().courses.filter(function (c) { return c.slug !== "prompt-library"; }).length, prompts: C().prompts.length };
     var unit = { replays: ["replay", "replays"], learning: ["course", "courses"], prompts: ["prompt", "prompts"] };
     var tiles = NAV.slice(1, 6).map(function (n) {
       var cnt = counts[n[0]];
@@ -450,7 +454,7 @@
     var cont = null;
     C().courses.some(function (c) { var nx = lessonsOf(c.id).filter(function (l) { return !C().done[l.id]; })[0]; if (nx && progress(c.id).done) { cont = { c: c, l: nx }; return true; } return false; });
     if (!cont && C().courses.length) { var c0 = C().courses[0], l0 = lessonsOf(c0.id).filter(function (l) { return !C().done[l.id]; })[0]; if (l0) cont = { c: c0, l: l0 }; }
-    var contCard = cont ? '<a class="card continue" href="#/learning/' + esc(cont.c.id) + "/" + esc(cont.l.id) + '"><span class="ic">' + ic("book", 20) + '</span><span style="min-width:0"><span class="mono-label">' + (progress(cont.c.id).done ? "Continue learning" : "Start here") + "</span><b>" + esc(cont.l.title) + '</b><small class="muted">' + esc(cont.c.title) + " · " + progress(cont.c.id).pct + '% done</small></span><span class="go">→</span></a>' : "";
+    var contCard = cont ? '<a class="card continue" href="' + (cont.c.slug === "prompt-library" ? "#/prompts/" : "#/learning/" + esc(cont.c.id) + "/") + esc(cont.l.id) + '"><span class="ic">' + ic("book", 20) + '</span><span style="min-width:0"><span class="mono-label">' + (progress(cont.c.id).done ? "Continue learning" : "Start here") + "</span><b>" + esc(cont.l.title) + '</b><small class="muted">' + esc(cont.c.title) + " · " + progress(cont.c.id).pct + '% done</small></span><span class="go">→</span></a>' : "";
     return '<section class="card hero"><span class="mono-label">Member workspace</span><h1>Welcome, ' + esc(first(m.name || m.email)) + ".</h1><p>Your PROVIDETECH Builder Hub: recordings, step-by-step tutorials, prompts and a community of builders. New content is added every month.</p>" +
       (m.team ? '<span class="until">Signed in as the PROVIDETECH Team</span>' : '<span class="until">Access until ' + esc(fmtDate(m.access_until)) + "</span>") + "</section>" +
       contCard + '<div class="grid cols3">' + tiles + "</div>";
@@ -471,29 +475,49 @@
       return '<a class="card tile media" href="#/replays/' + esc(r.id) + '"><span class="thumb">' + ic("play", 30) + (r.duration_min ? '<span class="dur">' + esc(mins(r.duration_min)) + "</span>" : "") + "</span><h3>" + esc(r.title) + "</h3><p>" + esc(r.recorded_on ? fmtDate(r.recorded_on + "T12:00:00") : (r.description || "").slice(0, 90)) + "</p></a>";
     }).join("") + "</div>";
   }
+  /* ---------- courses: outline + lesson pages (shared by Learning and Prompt Library) ---------- */
+  function libCourse() { return C().courses.filter(function (c) { return c.slug === "prompt-library"; })[0] || null; }
+  function sectionsOf(cid) {
+    var out = [], idx = {};
+    lessonsOf(cid).forEach(function (l) { var k = l.section || ""; if (!(k in idx)) { idx[k] = out.length; out.push({ name: k, lessons: [] }); } out[idx[k]].lessons.push(l); });
+    return out;
+  }
+  function two(n) { return (n < 10 ? "0" : "") + n; }
+  function courseOutline(c, base) {
+    var pr = progress(c.id), secs = sectionsOf(c.id), named = secs.some(function (x) { return x.name; }), n = 0;
+    var firstOpen = lessonsOf(c.id).filter(function (x) { return !C().done[x.id]; })[0] || lessonsOf(c.id)[0];
+    return '<section class="card outline"><div class="prog-row"><span><b>' + pr.done + "/" + pr.total + "</b> lessons · " + pr.pct + "%</span>" +
+      (firstOpen ? '<a class="btn btn-p" href="' + base + esc(firstOpen.id) + '">' + (pr.done ? "Continue" : "Start") + " →</a>" : "") + "</div>" + bar(pr.pct) +
+      secs.map(function (sec, si) {
+        return '<div class="osec">' + (named ? '<div class="osec-h"><span class="onum">' + two(si + 1) + "</span><h2>" + esc(sec.name || "Lessons") + "</h2></div>" : "") +
+          '<ol class="lessons">' + sec.lessons.map(function (l2) {
+            n++; var d = !!C().done[l2.id];
+            return '<li><a href="' + base + esc(l2.id) + '"><span class="ln' + (d ? " ok" : "") + '">' + (d ? "✓" : n) + '</span><span class="lt">' + esc(l2.title) + "</span>" + (l2.duration_min ? '<span class="muted">' + esc(l2.duration_min + "m") + "</span>" : "") + "</a></li>";
+          }).join("") + "</ol></div>";
+      }).join("") + "</section>";
+  }
+  function lessonPage(c, lid, base, backHref, backLabel) {
+    var ls = lessonsOf(c.id), i = -1; ls.forEach(function (x, k) { if (x.id === lid) i = k; });
+    var l = ls[i];
+    if (!l) return emptyState("book", "Lesson not found", "It may have been moved. Go back and pick another lesson.");
+    var done = !!C().done[l.id], prev = ls[i - 1], next = ls[i + 1];
+    var side = '<nav class="lnav" aria-label="Lessons"><a class="back" href="' + backHref + '">← ' + esc(backLabel) + "</a>" + sectionsOf(c.id).map(function (sec) {
+      return (sec.name ? '<div class="lnav-h">' + esc(sec.name) + "</div>" : "") + sec.lessons.map(function (x) {
+        return '<a class="lnav-i' + (x.id === l.id ? " on" : "") + (C().done[x.id] ? " ok" : "") + '" href="' + base + esc(x.id) + '"' + (x.id === l.id ? ' aria-current="page"' : "") + "><span>" + esc(x.title) + "</span></a>";
+      }).join("");
+    }).join("") + "</nav>";
+    var lbar = '<div class="lesson-bar"><button class="btn ' + (done ? "btn-g" : "btn-p") + '" data-act="done" data-id="' + esc(l.id) + '" data-on="' + (done ? "0" : "1") + '">' + (done ? "✓ Completed · undo" : "Mark as done") + "</button>" +
+      '<span class="nav-pn">' + (prev ? '<a class="btn btn-g" href="' + base + esc(prev.id) + '">← Previous</a>' : "") + (next ? '<a class="btn btn-g" href="' + base + esc(next.id) + '">Next →</a>' : "") + "</span></div>";
+    return '<div class="lwrap">' + side + '<div class="lmain"><header class="page-head"><span class="mono-label">' + (l.section ? esc(l.section) + " · " : "") + "Lesson " + (i + 1) + " of " + ls.length + (l.duration_min ? " · " + esc(readTime(l.duration_min)) : "") + "</span><h1>" + esc(l.title) + "</h1></header>" +
+      '<div class="read"><article class="card lesson-body md">' + (l.description ? md(l.description) : '<p class="muted">This lesson is being written.</p>') + "</article>" + lbar + "</div></div></div>";
+  }
   function viewLearning(cid, lid) {
-    var cs = C().courses;
-    if (cid && lid) {
-      var ls = lessonsOf(cid), i = -1; ls.forEach(function (x, k) { if (x.id === lid) i = k; });
-      var l = ls[i], c = cs.filter(function (x) { return x.id === cid; })[0];
-      if (!l || !c) return emptyState("book", "Lesson not found", "It may have been moved. Go back to Learning.");
-      var done = !!C().done[l.id], prev = ls[i - 1], next = ls[i + 1];
-      var lbar = '<div class="lesson-bar"><button class="btn ' + (done ? "btn-g" : "btn-p") + '" data-act="done" data-id="' + esc(l.id) + '" data-on="' + (done ? "0" : "1") + '">' + (done ? "✓ Completed · undo" : "Mark as done") + "</button>" +
-        '<span class="nav-pn">' + (prev ? '<a class="btn btn-g" href="#/learning/' + esc(c.id) + "/" + esc(prev.id) + '">← Previous</a>' : "") + (next ? '<a class="btn btn-g" href="#/learning/' + esc(c.id) + "/" + esc(next.id) + '">Next lesson →</a>' : "") + "</span></div>";
-      return '<a class="back" href="#/learning/' + esc(c.id) + '">← ' + esc(c.title) + '</a><header class="page-head"><span class="mono-label">Lesson ' + (i + 1) + " of " + ls.length + (l.duration_min ? " · " + esc(readTime(l.duration_min)) : "") + "</span><h1>" + esc(l.title) + "</h1></header>" +
-        '<div class="read">' + '<article class="card lesson-body md">' + (l.description ? md(l.description) : '<p class="muted">This lesson is being written.</p>') + "</article>" + lbar + "</div>";
-    }
-    if (cid) {
-      var c2 = cs.filter(function (x) { return x.id === cid; })[0];
-      if (!c2) return emptyState("book", "Course not found", "It may have been moved. Go back to Learning.");
-      var ls2 = lessonsOf(cid), pr = progress(cid), firstOpen = ls2.filter(function (x) { return !C().done[x.id]; })[0] || ls2[0];
-      return '<a class="back" href="#/learning">← All courses</a><header class="page-head"><h1>' + esc(c2.title) + "</h1>" + (c2.description ? "<p>" + esc(c2.description) + "</p>" : "") + "</header>" +
-        '<section class="card" style="margin-top:20px"><div class="prog-row"><span><b>' + pr.done + " of " + pr.total + "</b> lessons done</span>" + (firstOpen ? '<a class="btn btn-p" href="#/learning/' + esc(c2.id) + "/" + esc(firstOpen.id) + '">' + (pr.done ? "Continue" : "Start course") + " →</a>" : "") + "</div>" + bar(pr.pct) +
-        '<ol class="lessons">' + ls2.map(function (l2, k) {
-          var d = !!C().done[l2.id];
-          return '<li><a href="#/learning/' + esc(c2.id) + "/" + esc(l2.id) + '"><span class="ln' + (d ? " ok" : "") + '">' + (d ? "✓" : k + 1) + '</span><span class="lt">' + esc(l2.title) + "</span>" + (l2.duration_min ? '<span class="muted">' + esc(readTime(l2.duration_min)) + "</span>" : "") + "</a></li>";
-        }).join("") + "</ol></section>";
-    }
+    var lib = libCourse(), cs = C().courses.filter(function (c) { return c !== lib; });
+    if (lib && cid === lib.id) { location.hash = "#/prompts" + (lid ? "/" + lid : ""); return ""; }
+    var c = cs.filter(function (x) { return x.id === cid; })[0];
+    if (cid && !c) return emptyState("book", "Course not found", "It may have been moved. Go back to Learning.");
+    if (cid && lid) return lessonPage(c, lid, "#/learning/" + esc(c.id) + "/", "#/learning/" + esc(c.id), c.title);
+    if (cid) return '<a class="back" href="#/learning">← All courses</a><header class="page-head"><h1>' + esc(c.title) + "</h1>" + (c.description ? "<p>" + esc(c.description) + "</p>" : "") + "</header>" + courseOutline(c, "#/learning/" + esc(c.id) + "/");
     var head = '<header class="page-head"><h1>Learning</h1><p>Short, practical written lessons you can read in a few minutes. Mark lessons as done to track your progress.</p></header>';
     if (!cs.length) return head + emptyState("book", "First course coming soon", "Courses and lessons will appear here. New ones are added every month.");
     return head + '<div class="grid cols3">' + cs.map(function (c3) {
@@ -502,15 +526,20 @@
     }).join("") + "</div>";
   }
   var CAT_ORDER = ["Marketing", "Sales", "Customer service", "Operations", "Content", "Coding with AI"];
-  function viewPrompts() {
+  function viewPrompts(lid) {
+    var lib = libCourse();
+    if (lib && lid) return lessonPage(lib, lid, "#/prompts/", "#/prompts", "Prompt Library");
     var ps = C().prompts;
-    var head = '<header class="page-head"><h1>Prompt Library</h1><p>Copy-ready prompts for real business tasks. Replace the parts in [BRACKETS] with your own details.</p>' + (function () { var k = C().courses.filter(function (c) { return /build kits/i.test(c.title); })[0]; return k ? '<a class="card kits-link" href="#/learning/' + esc(k.id) + '"><span class="ic">' + ic("pack", 20) + '</span><span><b>Building a whole system?</b><small class="muted">Get the 10 starter prompts and full SPEC.md master prompts (Inventory, Online Store, Booking, HR, KPI Dashboard, CRM) in Build Kits.</small></span><span class="go">→</span></a>' : ""; })() + '</header>';
-    if (!ps.length) return head + emptyState("prompt", "The library is being filled", "Prompts will appear here soon. Your membership already includes them.");
+    var head = '<header class="page-head"><h1>Prompt Library</h1><p>' + esc(lib && lib.description ? lib.description : "Copy-ready prompts for real business tasks. Replace the parts in [BRACKETS] with your own details.") + "</p></header>";
+    var outline = lib ? courseOutline(lib, "#/prompts/") : "";
+    var nsec = lib ? sectionsOf(lib.id).filter(function (x) { return x.name; }).length : 0;
+    var quickHead = '<div class="osec-h" style="margin-top:28px"><span class="onum">' + two(nsec + 1) + '</span><h2>Quick prompts</h2></div><p class="muted" style="margin:4px 0 0">Everyday business prompts: marketing, sales, customer service, operations, content and coding. Replace the [BRACKETS] and copy.</p>';
+    if (!ps.length) return head + outline + (lib ? "" : emptyState("prompt", "The library is being filled", "Prompts will appear here soon. Your membership already includes them."));
     var cats = ps.map(function (p) { return p.category; }).filter(function (c, i, a) { return a.indexOf(c) === i; })
       .sort(function (a, b) { var ia = CAT_ORDER.indexOf(a), ib = CAT_ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || (a < b ? -1 : 1); });
     var q = S.pq.trim().toLowerCase();
     var list = ps.filter(function (p) { return (!S.pcat || p.category === S.pcat) && (!q || (p.title + " " + p.body + " " + p.category).toLowerCase().indexOf(q) >= 0); });
-    return head + '<div class="pfilter"><div class="chips" role="group" aria-label="Filter by category"><button class="chip-btn" data-act="pcat" data-id="" aria-pressed="' + !S.pcat + '">All</button>' +
+    return head + outline + (lib ? quickHead : "") + '<div class="pfilter"><div class="chips" role="group" aria-label="Filter by category"><button class="chip-btn" data-act="pcat" data-id="" aria-pressed="' + !S.pcat + '">All</button>' +
       cats.map(function (c) { return '<button class="chip-btn" data-act="pcat" data-id="' + esc(c) + '" aria-pressed="' + (S.pcat === c) + '">' + esc(c) + "</button>"; }).join("") + "</div>" +
       '<label class="psearch"><span class="sr-only">Search prompts</span><input class="input" id="pq" type="search" placeholder="Search prompts" value="' + esc(S.pq) + '"></label></div>' +
       (list.length ? '<div class="prompts">' + list.map(function (p) {
@@ -687,7 +716,7 @@
     if (!active()) return viewExpired();
     var parts = r.path.split("/"), key = parts[0];
     if (!S.c) { loadContent(); app.innerHTML = shell(key, '<div class="loading" style="height:50vh">Loading…</div>'); return; }
-    var view = !key ? viewHome() : key === "replays" ? viewReplays(parts[1]) : key === "learning" ? viewLearning(parts[1], parts[2]) : key === "prompts" ? viewPrompts() : key === "community" ? viewCommunity(parts[1], parts[2]) : key === "leaderboard" ? viewLeaderboard() : viewSection(key);
+    var view = !key ? viewHome() : key === "replays" ? viewReplays(parts[1]) : key === "learning" ? viewLearning(parts[1], parts[2]) : key === "prompts" ? viewPrompts(parts[1]) : key === "community" ? viewCommunity(parts[1], parts[2]) : key === "leaderboard" ? viewLeaderboard() : viewSection(key);
     var sy = S.keepScroll ? window.scrollY : 0;
     app.innerHTML = shell(key, view);
     if (S.keepScroll) { window.scrollTo(0, sy); S.keepScroll = false; }

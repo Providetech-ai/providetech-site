@@ -702,3 +702,8 @@ grant execute on function public.hub_points_all() to authenticated;
 -- Written lessons can be long (full SPEC.md starters)
 alter table public.lessons drop constraint if exists lessons_description_check;
 alter table public.lessons add constraint lessons_description_check check (char_length(description) <= 40000);
+
+-- Prompt Library course (slug) and lesson sections (e.g. "01 Starter Prompts")
+alter table public.courses add column if not exists slug text;
+create unique index if not exists courses_slug_idx on public.courses (slug) where slug is not null;
+alter table public.lessons add column if not exists section text not null default '' check (char_length(section) <= 80);
