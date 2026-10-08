@@ -248,3 +248,24 @@ a.chip-btn{display:inline-flex;align-items:center}
 }
 a.chip{color:var(--ink)}a.chip:hover{border-color:var(--line-strong);color:var(--blue-ink)}
 .spam-tip{font-size:13px;color:#5C4300;background:#FFF8E6;border:1px solid #F5D98B;border-radius:10px;padding:10px 12px;margin:0}
+/* ---------- written lessons ---------- */
+.read{display:grid;gap:16px;margin-top:18px;max-width:780px}
+.lesson-body{padding:clamp(20px,4vw,36px)}
+.md{color:var(--ink-2);font-size:16px;line-height:1.75;overflow-wrap:anywhere}
+.md>*:first-child{margin-top:0}
+.md p{margin:0 0 14px;color:var(--ink-2)}
+.md h2{font-size:21px;color:var(--ink);margin:30px 0 10px}
+.md h3{font-size:17px;color:var(--ink);margin:22px 0 8px}
+.md ul,.md ol{margin:0 0 16px;padding-left:22px}
+.md li{margin:5px 0}
+.md strong{color:var(--ink);font-weight:650}
+.md code{font:14px var(--mono);background:var(--mute-bg);border-radius:6px;padding:1px 6px}
+.md hr{border:0;border-top:1px solid var(--rule);margin:26px 0}
+.md a{text-decoration:underline;text-underline-offset:2px}
+.md .callout{background:var(--blue-50);border-left:4px solid var(--blue);border-radius:10px;padding:14px 18px;margin:0 0 16px}
+.md .callout p:last-child,.md .callout ul:last-child{margin-bottom:0}
+.md .callout p{color:var(--ink)}
+.pblock{position:relative;margin:0 0 16px}
+.pblock pre{margin:0;white-space:pre-wrap;font:14px/1.6 var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;padding-right:86px}
+.pblock button{position:absolute;top:8px;right:8px}
+@media (max-width:900px){ .pblock pre{padding-right:16px;padding-top:48px} }

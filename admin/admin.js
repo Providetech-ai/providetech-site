@@ -662,14 +662,14 @@
   }
   function viewHubCourses() {
     var cs = hubContent("courses").slice().sort(function (a, b) { return (a.sort - b.sort) || (a.created_at < b.created_at ? -1 : 1); });
-    if (!cs.length) return '<div class="card empty">No courses yet. Click <b>New course</b>, then add lessons with your Vimeo links.</div>';
+    if (!cs.length) return '<div class="card empty">No courses yet. Click <b>New course</b>, then add written lessons.</div>';
     return '<div style="display:grid;gap:16px">' + cs.map(function (c) {
       var ls = hubContent("lessons").filter(function (l) { return l.course_id === c.id; }).sort(function (a, b) { return (a.sort - b.sort) || (a.created_at < b.created_at ? -1 : 1); });
       var total = ls.reduce(function (t, l) { return t + (Number(l.duration_min) || 0); }, 0);
-      return '<section class="card" style="padding:20px 22px"><div class="batch-top"><div><span class="mono-label">Course · ' + ls.length + (ls.length === 1 ? " lesson" : " lessons") + (total ? " · " + mins(total) : "") + '</span><h2 style="font-size:18px;margin-top:4px">' + esc(c.title) + "</h2>" +
+      return '<section class="card" style="padding:20px 22px"><div class="batch-top"><div><span class="mono-label">Course · ' + ls.length + (ls.length === 1 ? " lesson" : " lessons") + (total ? " · " + total + " min read" : "") + '</span><h2 style="font-size:18px;margin-top:4px">' + esc(c.title) + "</h2>" +
         (c.description ? '<p class="muted" style="margin:4px 0 0;max-width:70ch">' + esc(c.description) + "</p>" : "") + "</div>" + pubPill(c) + "</div>" +
-        (ls.length ? '<div class="table-wrap" style="margin-top:14px"><table class="t"><thead><tr><th>#</th><th>Lesson</th><th>Length</th><th>Status</th><th></th></tr></thead><tbody>' + ls.map(function (l, i) {
-          return '<tr><td class="muted num">' + (i + 1) + "</td><td><b>" + esc(l.title) + "</b>" + (videoEmbed(l.video_url) ? "" : ' <span class="pill warn">No video</span>') + '</td><td class="muted">' + esc(mins(l.duration_min) || "—") + "</td><td>" + pubPill(l) +
+        (ls.length ? '<div class="table-wrap" style="margin-top:14px"><table class="t"><thead><tr><th>#</th><th>Lesson</th><th>Reading time</th><th>Status</th><th></th></tr></thead><tbody>' + ls.map(function (l, i) {
+          return '<tr><td class="muted num">' + (i + 1) + "</td><td><b>" + esc(l.title) + "</b>" + (String(l.description || "").trim() ? "" : ' <span class="pill warn">No content</span>') + '</td><td class="muted">' + esc(l.duration_min ? l.duration_min + " min" : "—") + "</td><td>" + pubPill(l) +
             '</td><td style="text-align:right;white-space:nowrap"><button class="btn btn-g btn-sm" data-act="lesson-edit" data-id="' + esc(l.id) + '">Edit</button> <button class="btn btn-g btn-sm" data-act="content-del" data-table="lessons" data-id="' + esc(l.id) + '">Delete</button></td></tr>';
         }).join("") + "</tbody></table></div>" : '<p class="muted" style="margin:12px 0 0">No lessons yet.</p>') +
         '<div class="batch-actions" style="margin-top:14px"><button class="btn btn-p btn-sm" data-act="lesson-new" data-id="' + esc(c.id) + '">' + I.plus + 'Add lesson</button><button class="btn btn-g btn-sm" data-act="course-edit" data-id="' + esc(c.id) + '">Edit course</button><button class="btn btn-g btn-sm" data-act="content-del" data-table="courses" data-id="' + esc(c.id) + '">Delete course</button></div></section>';
@@ -715,15 +715,15 @@
     openModal(l.id ? "Edit lesson" : "Add lesson", '<div class="form-grid">' +
       '<div class="span2">' + field(lbl("lcourse", "Course"), '<select class="input" id="lcourse" name="course_id">' + hubContent("courses").map(function (c) { return opt(c.id, c.title, l.course_id); }).join("") + "</select>") + "</div>" +
       '<div class="span2">' + field(lbl("ltitle", "Lesson title"), '<input class="input" id="ltitle" name="title" required value="' + esc(l.title) + '">') + "</div>" +
-      '<div class="span2">' + field(lbl("lvideo", "Video link"), '<input class="input" id="lvideo" name="video_url" type="url" inputmode="url" placeholder="https://vimeo.com/…" value="' + esc(l.video_url) + '">', videoHint()) + "</div>" +
-      field(lbl("ldur", "Length (minutes)"), '<input class="input" id="ldur" name="duration_min" type="number" min="0" step="1" value="' + esc(l.duration_min) + '">') +
+      field(lbl("ldur", "Reading time (minutes)"), '<input class="input" id="ldur" name="duration_min" type="number" min="0" step="1" value="' + esc(l.duration_min) + '">', "Leave empty to work it out automatically.") +
       field(lbl("lsort", "Order"), '<input class="input" id="lsort" name="sort" type="number" step="1" value="' + esc(l.sort) + '">') +
-      '<div class="span2">' + field(lbl("ldesc", "Notes for members (optional)"), '<textarea class="input" id="ldesc" name="description" rows="4" placeholder="What they\'ll learn, steps, links mentioned in the video">' + esc(l.description) + "</textarea>") + "</div>" + pubField(l) + "</div>",
+      '<div class="span2">' + field(lbl("ldesc", "Lesson content"), '<textarea class="input" id="ldesc" name="description" rows="16" maxlength="8000" style="font-family:var(--mono);font-size:13px;line-height:1.55" placeholder="Write the lesson here.">' + esc(l.description) + "</textarea>",
+        "Formatting: ## Heading · ### Smaller heading · - bullet · 1. step · **bold** · > Try it box · [link text](https://…) for templates or downloads · put an example prompt between two ``` lines to give it a Copy button.") + "</div>" + pubField(l) + "</div>",
       { submit: l.id ? "Save lesson" : "Add lesson", onSubmit: function (f) {
         if (f.title.trim().length < 2) throw new Error("Give the lesson a title.");
-        if (f.video_url.trim() && !videoEmbed(f.video_url)) throw new Error("That doesn't look like a Vimeo or YouTube video link.");
-        if (f.published && !f.video_url.trim()) throw new Error("Add the video link before publishing, or untick Published.");
-        act(PT.admin.saveContent("lessons", { id: l.id, course_id: f.course_id, title: f.title.trim(), description: f.description.trim(), video_url: f.video_url.trim(), duration_min: Math.max(0, parseInt(f.duration_min, 10) || 0), sort: parseInt(f.sort, 10) || 0, published: !!f.published }), l.id ? "Lesson saved" : "Lesson added");
+        if (f.published && !f.description.trim()) throw new Error("Write the lesson content before publishing, or untick Published.");
+        var words = f.description.trim().split(/\s+/).filter(Boolean).length;
+        act(PT.admin.saveContent("lessons", { id: l.id, course_id: f.course_id, title: f.title.trim(), description: f.description.trim(), video_url: "", duration_min: Math.max(0, parseInt(f.duration_min, 10) || Math.max(1, Math.round(words / 200))), sort: parseInt(f.sort, 10) || 0, published: !!f.published }), l.id ? "Lesson saved" : "Lesson added");
       } });
   }
   function replayForm(r) {

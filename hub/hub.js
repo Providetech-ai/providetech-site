@@ -44,6 +44,56 @@
   }
   function mins(n) { n = Number(n) || 0; return n ? (n >= 60 ? Math.floor(n / 60) + "h" + (n % 60 ? " " + (n % 60) + "m" : "") : n + " min") : ""; }
   function text(t) { return '<div class="prose">' + esc(t).replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>') + "</div>"; }
+  /* Lesson formatting: a small, safe subset of Markdown (everything is escaped first).
+     ## Heading   ### Smaller heading   - bullet   1. numbered   > Try it box   **bold**   `code`
+     [link text](https://…)   ``` … ``` = example box with a Copy button   --- = divider */
+  function mdInline(t) {
+    var links = [];
+    t = esc(t).replace(/\[([^\]]+)\]\((https:\/\/[^\s)]+)\)/g, function (_, label, url) { links.push('<a href="' + url + '" target="_blank" rel="noopener">' + label + "</a>"); return "\u0000" + (links.length - 1) + "\u0000"; });
+    t = t.replace(/(https:\/\/[^\s<]+[^\s<.,;:!?)])/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>");
+    return t.replace(/\u0000(\d+)\u0000/g, function (_, i) { return links[+i]; });
+  }
+  function md(src) {
+    var lines = String(src || "").replace(/\r/g, "").split("\n"), out = [], i = 0;
+    while (i < lines.length) {
+      var ln = lines[i], m;
+      if (/^```/.test(ln)) {
+        var buf = []; i++;
+        while (i < lines.length && !/^```/.test(lines[i])) buf.push(lines[i++]);
+        i++;
+        out.push('<div class="pblock"><button class="btn btn-g btn-sm" data-act="copy-block">Copy</button><pre>' + esc(buf.join("\n")) + "</pre></div>");
+        continue;
+      }
+      if (!ln.trim()) { i++; continue; }
+      if (/^-{3,}\s*$/.test(ln)) { out.push("<hr>"); i++; continue; }
+      if ((m = /^(#{2,3})\s+(.*)$/.exec(ln))) { out.push("<h" + m[1].length + ">" + mdInline(m[2]) + "</h" + m[1].length + ">"); i++; continue; }
+      if (/^>\s?/.test(ln)) {
+        var q = [];
+        while (i < lines.length && /^>\s?/.test(lines[i])) q.push(lines[i++].replace(/^>\s?/, ""));
+        out.push('<div class="callout">' + md(q.join("\n")) + "</div>");
+        continue;
+      }
+      if (/^\s*([-•*])\s+/.test(ln)) {
+        var ul = [];
+        while (i < lines.length && /^\s*([-•*])\s+/.test(lines[i])) ul.push("<li>" + mdInline(lines[i++].replace(/^\s*([-•*])\s+/, "")) + "</li>");
+        out.push("<ul>" + ul.join("") + "</ul>");
+        continue;
+      }
+      if (/^\s*\d+[.)]\s+/.test(ln)) {
+        var ol = [];
+        while (i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) ol.push("<li>" + mdInline(lines[i++].replace(/^\s*\d+[.)]\s+/, "")) + "</li>");
+        out.push("<ol>" + ol.join("") + "</ol>");
+        continue;
+      }
+      var para = [];
+      while (i < lines.length && lines[i].trim() && !/^(```|#{2,3}\s|>|\s*[-•*]\s+|\s*\d+[.)]\s+|-{3,}\s*$)/.test(lines[i])) para.push(mdInline(lines[i++]));
+      if (!para.length) para.push(mdInline(lines[i++]));
+      out.push("<p>" + para.join("<br>") + "</p>");
+    }
+    return out.join("");
+  }
+  function readTime(n) { n = Number(n) || 0; return n ? n + " min read" : ""; }
   function C() { return S.c || { courses: [], lessons: [], replays: [], prompts: [], done: {} }; }
   function lessonsOf(cid) { return C().lessons.filter(function (l) { return l.course_id === cid; }); }
   function progress(cid) { var ls = lessonsOf(cid), d = ls.filter(function (l) { return C().done[l.id]; }).length; return { done: d, total: ls.length, pct: ls.length ? Math.round(d / ls.length * 100) : 0 }; }
@@ -110,7 +160,7 @@
   var DEMO_CONTENT = {
     courses: [{ id: "c1", title: "AI Business Systems 101", description: "Turn one real business problem into a working system, step by step." }],
     lessons: [
-      { id: "l1", course_id: "c1", title: "Pick the right problem to automate", description: "How to spot the task that costs you the most time.", video_url: "https://vimeo.com/76979871", duration_min: 12 },
+      { id: "l1", course_id: "c1", title: "Pick the right problem to automate", description: "## Why this matters\nStart with the task that eats the most hours.\n\n- List your weekly tasks\n- Mark the repetitive ones\n\n```\nHere are my weekly tasks: [LIST]. Which 3 should I automate first?\n```\n\n> **Try it:** write down 10 tasks you did this week.", video_url: "", duration_min: 6 },
       { id: "l2", course_id: "c1", title: "Map the workflow before you build", description: "", video_url: "https://vimeo.com/76979871", duration_min: 18 },
       { id: "l3", course_id: "c1", title: "Build your first AI assistant", description: "", video_url: "https://vimeo.com/76979871", duration_min: 25 },
     ],
@@ -400,7 +450,7 @@
     var cont = null;
     C().courses.some(function (c) { var nx = lessonsOf(c.id).filter(function (l) { return !C().done[l.id]; })[0]; if (nx && progress(c.id).done) { cont = { c: c, l: nx }; return true; } return false; });
     if (!cont && C().courses.length) { var c0 = C().courses[0], l0 = lessonsOf(c0.id).filter(function (l) { return !C().done[l.id]; })[0]; if (l0) cont = { c: c0, l: l0 }; }
-    var contCard = cont ? '<a class="card continue" href="#/learning/' + esc(cont.c.id) + "/" + esc(cont.l.id) + '"><span class="ic">' + ic("play", 20) + '</span><span style="min-width:0"><span class="mono-label">' + (progress(cont.c.id).done ? "Continue learning" : "Start here") + "</span><b>" + esc(cont.l.title) + '</b><small class="muted">' + esc(cont.c.title) + " · " + progress(cont.c.id).pct + '% done</small></span><span class="go">→</span></a>' : "";
+    var contCard = cont ? '<a class="card continue" href="#/learning/' + esc(cont.c.id) + "/" + esc(cont.l.id) + '"><span class="ic">' + ic("book", 20) + '</span><span style="min-width:0"><span class="mono-label">' + (progress(cont.c.id).done ? "Continue learning" : "Start here") + "</span><b>" + esc(cont.l.title) + '</b><small class="muted">' + esc(cont.c.title) + " · " + progress(cont.c.id).pct + '% done</small></span><span class="go">→</span></a>' : "";
     return '<section class="card hero"><span class="mono-label">Member workspace</span><h1>Welcome, ' + esc(first(m.name || m.email)) + ".</h1><p>Your PROVIDETECH Builder Hub: recordings, step-by-step tutorials, prompts and a community of builders. New content is added every month.</p>" +
       (m.team ? '<span class="until">Signed in as the PROVIDETECH Team</span>' : '<span class="until">Access until ' + esc(fmtDate(m.access_until)) + "</span>") + "</section>" +
       contCard + '<div class="grid cols3">' + tiles + "</div>";
@@ -428,11 +478,10 @@
       var l = ls[i], c = cs.filter(function (x) { return x.id === cid; })[0];
       if (!l || !c) return emptyState("book", "Lesson not found", "It may have been moved. Go back to Learning.");
       var done = !!C().done[l.id], prev = ls[i - 1], next = ls[i + 1];
-      return '<a class="back" href="#/learning/' + esc(c.id) + '">← ' + esc(c.title) + '</a><header class="page-head"><span class="mono-label">Lesson ' + (i + 1) + " of " + ls.length + (l.duration_min ? " · " + esc(mins(l.duration_min)) : "") + "</span><h1>" + esc(l.title) + "</h1></header>" +
-        '<div class="watch">' + player(l.video_url, l.title) +
-        '<div class="lesson-bar"><button class="btn ' + (done ? "btn-g" : "btn-p") + '" data-act="done" data-id="' + esc(l.id) + '" data-on="' + (done ? "0" : "1") + '">' + (done ? "✓ Completed · undo" : "Mark as done") + "</button>" +
-        '<span class="nav-pn">' + (prev ? '<a class="btn btn-g" href="#/learning/' + esc(c.id) + "/" + esc(prev.id) + '">← Previous</a>' : "") + (next ? '<a class="btn btn-g" href="#/learning/' + esc(c.id) + "/" + esc(next.id) + '">Next lesson →</a>' : "") + "</span></div>" +
-        (l.description ? '<section class="card">' + text(l.description) + "</section>" : "") + "</div>";
+      var lbar = '<div class="lesson-bar"><button class="btn ' + (done ? "btn-g" : "btn-p") + '" data-act="done" data-id="' + esc(l.id) + '" data-on="' + (done ? "0" : "1") + '">' + (done ? "✓ Completed · undo" : "Mark as done") + "</button>" +
+        '<span class="nav-pn">' + (prev ? '<a class="btn btn-g" href="#/learning/' + esc(c.id) + "/" + esc(prev.id) + '">← Previous</a>' : "") + (next ? '<a class="btn btn-g" href="#/learning/' + esc(c.id) + "/" + esc(next.id) + '">Next lesson →</a>' : "") + "</span></div>";
+      return '<a class="back" href="#/learning/' + esc(c.id) + '">← ' + esc(c.title) + '</a><header class="page-head"><span class="mono-label">Lesson ' + (i + 1) + " of " + ls.length + (l.duration_min ? " · " + esc(readTime(l.duration_min)) : "") + "</span><h1>" + esc(l.title) + "</h1></header>" +
+        '<div class="read">' + '<article class="card lesson-body md">' + (l.description ? md(l.description) : '<p class="muted">This lesson is being written.</p>') + "</article>" + lbar + "</div>";
     }
     if (cid) {
       var c2 = cs.filter(function (x) { return x.id === cid; })[0];
@@ -442,14 +491,14 @@
         '<section class="card" style="margin-top:20px"><div class="prog-row"><span><b>' + pr.done + " of " + pr.total + "</b> lessons done</span>" + (firstOpen ? '<a class="btn btn-p" href="#/learning/' + esc(c2.id) + "/" + esc(firstOpen.id) + '">' + (pr.done ? "Continue" : "Start course") + " →</a>" : "") + "</div>" + bar(pr.pct) +
         '<ol class="lessons">' + ls2.map(function (l2, k) {
           var d = !!C().done[l2.id];
-          return '<li><a href="#/learning/' + esc(c2.id) + "/" + esc(l2.id) + '"><span class="ln' + (d ? " ok" : "") + '">' + (d ? "✓" : k + 1) + '</span><span class="lt">' + esc(l2.title) + "</span>" + (l2.duration_min ? '<span class="muted">' + esc(mins(l2.duration_min)) + "</span>" : "") + "</a></li>";
+          return '<li><a href="#/learning/' + esc(c2.id) + "/" + esc(l2.id) + '"><span class="ln' + (d ? " ok" : "") + '">' + (d ? "✓" : k + 1) + '</span><span class="lt">' + esc(l2.title) + "</span>" + (l2.duration_min ? '<span class="muted">' + esc(readTime(l2.duration_min)) + "</span>" : "") + "</a></li>";
         }).join("") + "</ol></section>";
     }
-    var head = '<header class="page-head"><h1>Learning</h1><p>Step-by-step courses. Mark lessons as done to track your progress.</p></header>';
+    var head = '<header class="page-head"><h1>Learning</h1><p>Short, practical written lessons you can read in a few minutes. Mark lessons as done to track your progress.</p></header>';
     if (!cs.length) return head + emptyState("book", "First course coming soon", "Courses and lessons will appear here. New ones are added every month.");
     return head + '<div class="grid cols3">' + cs.map(function (c3) {
       var p3 = progress(c3.id), ls3 = lessonsOf(c3.id), total = ls3.reduce(function (t, x) { return t + (Number(x.duration_min) || 0); }, 0);
-      return '<a class="card tile" href="#/learning/' + esc(c3.id) + '"><span class="ic">' + ic("book", 20) + "</span><h3>" + esc(c3.title) + "</h3><p>" + esc(c3.description || "") + '</p><span class="muted" style="font-size:13px">' + p3.total + (p3.total === 1 ? " lesson" : " lessons") + (total ? " · " + esc(mins(total)) : "") + (p3.done ? " · " + p3.pct + "% done" : "") + "</span>" + bar(p3.pct) + "</a>";
+      return '<a class="card tile" href="#/learning/' + esc(c3.id) + '"><span class="ic">' + ic("book", 20) + "</span><h3>" + esc(c3.title) + "</h3><p>" + esc(c3.description || "") + '</p><span class="muted" style="font-size:13px">' + p3.total + (p3.total === 1 ? " lesson" : " lessons") + (total ? " · " + esc(readTime(total)) : "") + (p3.done ? " · " + p3.pct + "% done" : "") + "</span>" + bar(p3.pct) + "</a>";
     }).join("") + "</div>";
   }
   var CAT_ORDER = ["Marketing", "Sales", "Customer service", "Operations", "Content", "Coding with AI"];
@@ -695,6 +744,12 @@
       t.disabled = true;
       api.setDone(id, on).then(function () { if (on) S.c.done[id] = new Date().toISOString(); else delete S.c.done[id]; S.keepScroll = true; render(); refreshPoints(); },
         function (er) { t.disabled = false; alertMsg(er.message || "Couldn't save. Try again."); });
+    }
+    if (a === "copy-block") {
+      var pre = t.parentNode.querySelector("pre"), txt = pre ? pre.textContent : "";
+      var okB = function () { t.textContent = "Copied ✓"; setTimeout(function () { t.textContent = "Copy"; }, 1600); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(okB, function () { fallbackCopy(txt); okB(); });
+      else { fallbackCopy(txt); okB(); }
     }
     if (a === "copy") {
       var p = C().prompts.filter(function (x) { return x.id === t.getAttribute("data-id"); })[0]; if (!p) return;
