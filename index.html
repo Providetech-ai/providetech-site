@@ -503,6 +503,24 @@ section{scroll-margin-top:84px}
   .pre-line i,.pre-bars .fill{transform:none}
 }
 </style>
+<style>
+/* Real sessions gallery */
+.pf-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(10px,1.2vw,16px);margin-top:clamp(36px,5vw,56px)}
+.pf-video{grid-column:span 2;grid-row:span 2;margin:0;position:relative;border-radius:var(--r-lg);overflow:hidden;background:#000;border:1px solid var(--rule)}
+.pf-video video{display:block;width:100%;height:100%;object-fit:cover}
+.pf-video figcaption{position:absolute;left:12px;top:12px;display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:rgba(8,16,32,.72);color:#fff;font-size:.82rem;font-weight:600;pointer-events:none}
+.pf-live{width:8px;height:8px;border-radius:50%;background:#FF4D4D;box-shadow:0 0 0 3px rgba(255,77,77,.25)}
+.pf-tile{padding:0;border:1px solid var(--rule);border-radius:var(--r);overflow:hidden;background:var(--gray-50);cursor:zoom-in;aspect-ratio:4/3;display:block}
+.pf-tile img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .5s var(--ease)}
+.pf-tile:hover img{transform:scale(1.04)}
+.pf-tile:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.pf-box{padding:0;border:0;background:transparent;max-width:min(1100px,94vw);max-height:90vh;overflow:visible}
+.pf-box::backdrop{background:rgba(5,10,20,.82)}
+.pf-box img{display:block;max-width:min(1100px,94vw);max-height:86vh;width:auto;height:auto;border-radius:var(--r)}
+.pf-x{position:absolute;top:-14px;right:-14px;width:40px;height:40px;border-radius:50%;border:0;background:#fff;color:#111;display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow-lg)}
+@media (max-width:900px){.pf-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pf-video{grid-row:auto;aspect-ratio:16/9}}
+@media (prefers-reduced-motion:reduce){.pf-tile img{transition:none}}
+</style>
 </head>
 <body>
 <header class="nav" id="top">
@@ -951,6 +969,35 @@ section{scroll-margin-top:84px}
   </div>
 </section>
 
+<!-- PROOF: real face-to-face sessions -->
+<section class="section proof" id="sessions">
+  <div class="wrap">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow"><span data-i18n="proof.eyebrow">Real Sessions</span></span>
+      <h2 class="h2"><span data-i18n="proof.h2">Face-to-Face Coaching, Not Just a Video Course</span></h2>
+      <p class="lede"><span data-i18n="proof.lede">We meet business owners in person at our office. We teach, guide and build their systems with them, side by side. These are real sessions with real clients.</span></p>
+    </div>
+    <div class="pf-grid" data-reveal>
+      <figure class="pf-video">
+        <video poster="assets/sessions/class-poster.jpg" muted loop playsinline controls preload="metadata" aria-label="Video of a full workshop class waving to the camera"><source src="assets/sessions/class.mp4" type="video/mp4"><source src="assets/sessions/class.webm" type="video/webm"></video>
+        <figcaption><span class="pf-live" aria-hidden="true"></span><span data-i18n="proof.vid">A full workshop class</span></figcaption>
+      </figure>
+      <button type="button" class="pf-tile" data-full="assets/sessions/session-1.jpg" aria-label="View larger photo"><img src="assets/sessions/session-1.jpg" alt="Face-to-face consultation with clients at the PROVIDETECH office" width="1400" height="1050" loading="lazy" decoding="async"></button>
+      <button type="button" class="pf-tile" data-full="assets/sessions/session-2.jpg" aria-label="View larger photo"><img src="assets/sessions/session-2.jpg" alt="Clients with the PROVIDETECH team after a coaching session" width="1400" height="1050" loading="lazy" decoding="async"></button>
+      <button type="button" class="pf-tile" data-full="assets/sessions/session-3.jpg" aria-label="View larger photo"><img src="assets/sessions/session-3.jpg" alt="One-on-one coaching: a client and two coaches reviewing her system on a laptop" width="1400" height="1050" loading="lazy" decoding="async"></button>
+      <button type="button" class="pf-tile" data-full="assets/sessions/session-4.jpg" aria-label="View larger photo"><img src="assets/sessions/session-4.jpg" alt="Coach guiding clients through a build in the training room" width="1400" height="1050" loading="lazy" decoding="async"></button>
+      <button type="button" class="pf-tile" data-full="assets/sessions/session-5.jpg" aria-label="View larger photo"><img src="assets/sessions/session-5.jpg" alt="Client and coach working side by side on laptops" width="1400" height="1050" loading="lazy" decoding="async"></button>
+      <button type="button" class="pf-tile" data-full="assets/sessions/session-6.jpg" aria-label="View larger photo"><img src="assets/sessions/session-6.jpg" alt="Clients visiting the PROVIDETECH office for a session" width="1400" height="1050" loading="lazy" decoding="async"></button>
+      <button type="button" class="pf-tile" data-full="assets/sessions/session-7.jpg" aria-label="View larger photo"><img src="assets/sessions/session-7.jpg" alt="Clients with their coaches after a hands-on session" width="1400" height="1050" loading="lazy" decoding="async"></button>
+      <button type="button" class="pf-tile" data-full="assets/sessions/session-8.jpg" aria-label="View larger photo"><img src="assets/sessions/session-8.jpg" alt="Group coaching in the training room, building on a laptop together" width="1400" height="1050" loading="lazy" decoding="async"></button>
+    </div>
+  </div>
+</section>
+<dialog class="pf-box" id="pfBox" aria-label="Photo">
+  <button type="button" class="pf-x" id="pfClose" aria-label="Close"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button>
+  <img id="pfImg" alt="">
+</dialog>
+
 <!-- WHY -->
 <section class="section" id="about">
   <div class="wrap">
@@ -1127,6 +1174,21 @@ section{scroll-margin-top:84px}
 })();
 </script>
 <script>
+/* Real sessions: enlarge photos, play the class video only while it's on screen */
+(function(){
+  var box=document.getElementById('pfBox'),img=document.getElementById('pfImg');
+  if(box&&img&&box.showModal){
+    document.querySelectorAll('.pf-tile').forEach(function(b){b.addEventListener('click',function(){var i=b.querySelector('img');img.src=b.getAttribute('data-full');img.alt=i?i.alt:'';box.showModal();});});
+    document.getElementById('pfClose').addEventListener('click',function(){box.close();});
+    box.addEventListener('click',function(e){if(e.target===box)box.close();});
+  }
+  var v=document.querySelector('.pf-video video');
+  if(v&&'IntersectionObserver' in window&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){
+    new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var p=v.play();if(p&&p.catch)p.catch(function(){});}else v.pause();});},{threshold:.35}).observe(v);
+  }
+})();
+</script>
+<script>
 window.PT_I18N={
 tl:{
 "navs.home":"Home","navs.solutions":"Solusyon","navs.how":"Proseso","navs.workshops":"Workshop","navs.projects":"Proyekto","navs.about":"Tungkol sa Amin","cta.nav":"Magsimula Na",
@@ -1176,6 +1238,7 @@ tl:{
 "why.1t":"Negosyo Muna","why.1p":"Inuunawa muna namin ang tunay na problema bago ang teknolohiya.",
 "why.2t":"Mabilis na Prototyping","why.2p":"Lubhang pinabibilis ng AI-assisted development ang pagbuo mula ideya hanggang sistema.",
 "why.3t":"Praktikal na Solusyon","why.3p":"Inuuna namin ang mga sistemang magagamit kaysa sa hindi kailangang teknikal na komplikasyon.",
+"proof.eyebrow":"Totoong Sessions","proof.h2":"Harapang Coaching, Hindi Lang Video Course","proof.lede":"Personal naming kinikita ang mga may-ari ng negosyo sa aming opisina. Tinuturuan at ginagabayan namin sila, at sabay naming binubuo ang kanilang mga system. Mga totoong session ito kasama ang totoong mga kliyente.","proof.vid":"Isang buong klase ng workshop",
 "why.4t":"Kaalaman ng Tao + AI","why.4p":"Pinagsasama namin ang propesyonal na kaalaman sa teknolohiya at ang makabagong kakayahan ng AI.",
 "uc.eyebrow":"Mga Gamit sa Negosyo","uc.h2":"Ano ang Mabubuo Natin nang Magkasama?",
 "uc.lede":"May sariling record, iskedyul, at approval ang bawat industriya. Ito ang mga sistemang maaari naming idisenyo ayon sa inyo.",
@@ -1241,6 +1304,7 @@ ceb:{
 "why.1t":"Negosyo Una","why.1p":"Una namong sabton ang tinuod nga problema sa dili pa ang teknolohiya.",
 "why.2t":"Paspas nga Prototyping","why.2p":"Gipaspas pag-ayo sa AI-assisted development ang paghimo gikan sa ideya hangtod sa sistema.",
 "why.3t":"Praktikal nga Solusyon","why.3p":"Among unahon ang mga sistema nga magamit kaysa sa dili kinahanglang teknikal nga kakomplikado.",
+"proof.eyebrow":"Tinuod nga Sessions","proof.h2":"Atubangang Coaching, Dili Lang Video Course","proof.lede":"Personal namong gikitaan ang mga tag-iya sa negosyo sa among opisina. Among gitudloan ug gigiyahan sila, ug dungan namong gihimo ang ilang mga system. Tinuod kini nga mga session uban sa tinuod nga mga kliyente.","proof.vid":"Usa ka tibuok klase sa workshop",
 "why.4t":"Kahanas sa Tawo + AI","why.4p":"Among gihiusa ang propesyonal nga kahibalo sa teknolohiya ug ang modernong kapabilidad sa AI.",
 "uc.eyebrow":"Mga Gamit sa Negosyo","uc.h2":"Unsa ang Atong Mahimo nga Magkauban?",
 "uc.lede":"Ang matag industriya adunay kaugalingong record, iskedyul, ug approval. Kini ang mga sistema nga among madisenyo base sa inyo.",
