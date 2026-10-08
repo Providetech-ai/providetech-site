@@ -934,6 +934,7 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
   }
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function dateLabel(ymd){var p=String(ymd).split('-'),d=new Date(+p[0],+p[1]-1,+p[2]);try{return d.toLocaleDateString(lang==='en'?'en-PH':'fil-PH',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}catch(e){return ymd}}
+  function startMin(t){var m=/(\d{1,2})(?::(\d{2}))?\s*([AP])\.?M/i.exec(String(t||''));if(!m)return 9999;var h=+m[1]%12+(m[3].toUpperCase()==='P'?12:0);return h*60+(+m[2]||0)}
   function noteEl(t){var n=document.createElement('p');n.className='sess-note';n.textContent=t;return n}
   function renderSessions(){
     box.innerHTML='';renderProducts();
@@ -945,7 +946,7 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
     list.forEach(function(f){
       if(f==='home'){var h=homeSession();if(h&&h.seats_left>0)hb.hidden=false;else box.appendChild(noteEl(tr('homeFull','1-on-1 coaching is fully booked right now. Message us from the homepage.')));return}
       var p=prodOf(f),head=document.createElement('h3');head.className='sub-h';head.textContent=tr('pickDateFor','Pick a date')+' · '+tr(p.k,p.en);box.appendChild(head);
-      var ss=inFmt(f);if(!ss.length){box.appendChild(noteEl(tr('noFmt','No dates are open for this yet. Message us from the homepage and we will let you know.')));return}
+      var ss=inFmt(f).slice().sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:startMin(a.time_label)-startMin(b.time_label)});if(!ss.length){box.appendChild(noteEl(tr('noFmt','No dates are open for this yet. Message us from the homepage and we will let you know.')));return}
       var grp=document.createElement('div');grp.className='choices';grp.setAttribute('role','radiogroup');grp.setAttribute('aria-label',head.textContent);
       ss.forEach(function(s){
         var full=s.seats_left<=0;
