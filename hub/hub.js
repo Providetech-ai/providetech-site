@@ -170,9 +170,10 @@
     ],
     replays: [{ id: "r1", title: "Live build: booking system for a clinic", description: "Full session, from blank page to working bookings.", video_url: "https://vimeo.com/76979871", recorded_on: "2026-09-20", duration_min: 118 }],
     prompts: [
-      { id: "p1", category: "Marketing", title: "Facebook ad for a limited promo", body: "Act as a Filipino direct-response copywriter. Write 3 Facebook ad versions for [BUSINESS] promoting [OFFER] until [DEADLINE]. Audience: [WHO]. Keep each under 90 words, Taglish is okay, end with one clear call to action." },
-      { id: "p2", category: "Customer service", title: "Polite reply to a late-delivery complaint", body: "Write a short, warm reply to this customer message: [PASTE MESSAGE]. Apologise once, explain [REASON] in one sentence, give the new delivery date [DATE], and offer [SMALL GESTURE]." },
-      { id: "p3", category: "Operations", title: "Turn a messy process into a checklist", body: "Here is how we currently do [PROCESS]: [DESCRIBE]. Turn it into a numbered checklist a new staff member can follow, flag steps that could be automated, and list what information each step needs." },
+      { id: "p1", category: "Sales & Orders", title: "Order tracker", body: "Build a simple order tracker app for my [TYPE OF BUSINESS, e.g. online food business].\nIt must let me:\n- Add an order: customer name, mobile, items (pick from my product list), quantity, delivery date, address, payment method (GCash, COD, Bank, Cash), notes\n- Compute the total automatically from my price list: [PASTE PRODUCTS AND PRICES]\n- Move each order through: New → Paid → Preparing → Out for delivery → Done (or Cancelled)\n- See today's orders and tomorrow's orders at the top\n- Search by customer name or mobile\n- See totals: orders and sales today, this week, this month\n\nMake it easy for a non-techy owner: big buttons, works on a phone, uses ₱, saves my data, and has Export/Import for backups.", sort: 1 },
+      { id: "p2", category: "Inventory & Stock", title: "Simple inventory with low-stock alerts", body: "Build a simple inventory app for my [TYPE OF BUSINESS].\nIt must let me:\n- Add products: name, category, unit (pc, box, kg…), cost price, selling price, current stock, reorder level\n- Record Stock In (deliveries) and Stock Out (sold, used, damaged, expired) with a reason; stock updates automatically\n- Never let stock go below zero\n- Show a red \"Low stock\" list for items at or below their reorder level\n- Show total stock value (at cost and at selling price)\n- Show the history of every stock movement per product\n\nMake it easy for a non-techy owner: big buttons, works on a phone, uses ₱, saves my data, and has Export/Import for backups.", sort: 1 },
+      { id: "p3", category: "Staff & HR", title: "Staff attendance log", body: "Build a staff attendance app for my [BUSINESS] with [NUMBER] staff.\nIt must let me:\n- Save staff: name, position, shift (e.g. 8:00 AM–5:00 PM), rest days\n- Record time in and time out per staff per day (a big Time In / Time Out button for each person)\n- Compute lates (after shift start + [10] minutes grace), undertime and total hours\n- Mark absent, leave or day off\n- Show a summary per cutoff ([1–15] and [16–end of month]): days worked, total lates, absences\n- Let me correct a record with a note of why\n\nMake it easy for a non-techy owner: big buttons, works on a phone, uses ₱, saves my data, and has Export/Import for backups.", sort: 1 },
+      { id: "p4", category: "Money & Finance", title: "Expense tracker", body: "Build an expense tracker for my business.\nIt must let me:\n- Add an expense: date, amount, category (Rent, Salaries, Supplies, Utilities, Marketing, Transport, Other: [YOUR CATEGORIES]), paid from (Cash, GCash, Bank), note\n- See totals per category this month and compared to last month\n- Set a monthly budget per category and warn me when I'm close to it\n- Search and filter by date and category\n- Show a simple monthly summary I can send to my accountant\n\nMake it easy for a non-techy owner: big buttons, works on a phone, uses ₱, saves my data, and has Export/Import for backups.", sort: 1 },
     ],
   };
   var PAGE = 20;
@@ -525,7 +526,7 @@
       return '<a class="card tile" href="#/learning/' + esc(c3.id) + '"><span class="ic">' + ic("book", 20) + "</span><h3>" + esc(c3.title) + "</h3><p>" + esc(c3.description || "") + '</p><span class="muted" style="font-size:13px">' + p3.total + (p3.total === 1 ? " lesson" : " lessons") + (total ? " · " + esc(readTime(total)) : "") + (p3.done ? " · " + p3.pct + "% done" : "") + "</span>" + bar(p3.pct) + "</a>";
     }).join("") + "</div>";
   }
-  var CAT_ORDER = ["Marketing", "Sales", "Customer service", "Operations", "Content", "Coding with AI"];
+  var CAT_ORDER = ["Sales & Orders", "Inventory & Stock", "Staff & HR", "Bookings & Schedules", "Money & Finance", "Customers"];
   function viewPrompts(lid) {
     var lib = libCourse();
     if (lib && lid) return lessonPage(lib, lid, "#/prompts/", "#/prompts", "Prompt Library");
@@ -533,9 +534,9 @@
     var head = '<header class="page-head"><h1>Prompt Library</h1><p>' + esc(lib && lib.description ? lib.description : "Copy-ready prompts for real business tasks. Replace the parts in [BRACKETS] with your own details.") + "</p></header>";
     var outline = lib ? courseOutline(lib, "#/prompts/") : "";
     var nsec = lib ? sectionsOf(lib.id).filter(function (x) { return x.name; }).length : 0;
-    var quickHead = '<div class="osec-h" style="margin-top:28px"><span class="onum">' + two(nsec + 1) + '</span><h2>Everyday Business Prompts</h2></div>' +
-      '<p class="muted" style="margin:4px 0 0">No building needed. Use these for daily tasks like replying to customers, writing posts and planning your week.</p>' +
-      '<ol class="howto"><li><b>Copy</b> a prompt below</li><li><b>Paste</b> it into Claude (claude.ai or the Claude app)</li><li><b>Replace</b> the [BRACKETS] with your own details, then send</li></ol>';
+    var quickHead = '<div class="osec-h" style="margin-top:28px"><span class="onum">' + two(nsec + 1) + '</span><h2>Quick System Builds</h2></div>' +
+      '<p class="muted" style="margin:4px 0 0">One prompt = one working management app for your business. Pick the system you need, and Claude builds it for you in one go.</p>' +
+      '<ol class="howto"><li><b>Copy</b> a prompt below</li><li><b>Paste</b> it into Claude (claude.ai or the Claude app)</li><li><b>Replace</b> the [BRACKETS] with your own details, then send</li><li><b>Use</b> the app Claude builds. Ask Claude for changes anytime, and export a backup every week</li></ol>';
     if (!ps.length) return head + outline + (lib ? "" : emptyState("prompt", "The library is being filled", "Prompts will appear here soon. Your membership already includes them."));
     var cats = ps.map(function (p) { return p.category; }).filter(function (c, i, a) { return a.indexOf(c) === i; })
       .sort(function (a, b) { var ia = CAT_ORDER.indexOf(a), ib = CAT_ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || (a < b ? -1 : 1); });
@@ -544,7 +545,7 @@
       .sort(function (a, b) { return (cats.indexOf(a.category) - cats.indexOf(b.category)) || ((a.sort || 0) - (b.sort || 0)); });
     return head + outline + (lib ? quickHead : "") + '<div class="pfilter"><div class="chips" role="group" aria-label="Filter by category"><button class="chip-btn" data-act="pcat" data-id="" aria-pressed="' + !S.pcat + '">All</button>' +
       cats.map(function (c) { return '<button class="chip-btn" data-act="pcat" data-id="' + esc(c) + '" aria-pressed="' + (S.pcat === c) + '">' + esc(c) + "</button>"; }).join("") + "</div>" +
-      '<label class="psearch"><span class="sr-only">Search prompts</span><input class="input" id="pq" type="search" placeholder="Search prompts" value="' + esc(S.pq) + '"></label></div>' +
+      '<label class="psearch"><span class="sr-only">Search prompts</span><input class="input" id="pq" type="search" placeholder="Search systems (e.g. inventory, payroll)" value="' + esc(S.pq) + '"></label></div>' +
       (list.length ? '<div class="prompts">' + list.map(function (p) {
         return '<article class="card prompt"><div class="ptop"><span class="pill cat">' + esc(p.category) + '</span><button class="btn btn-g btn-sm" data-act="copy" data-id="' + esc(p.id) + '">Copy</button></div><h3>' + esc(p.title) + '</h3><pre class="pbody">' + esc(p.body) + '</pre></article>';
       }).join("") + "</div>" : '<p class="muted" style="margin-top:20px">No prompts match. Try another word or category.</p>');

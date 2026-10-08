@@ -633,7 +633,7 @@
     return true;
   }
   /* ---- hub content (stage 2) ---- */
-  var PROMPT_CATS = ["Marketing", "Sales", "Customer service", "Operations", "Content", "Coding with AI"];
+  var PROMPT_CATS = ["Sales & Orders", "Inventory & Stock", "Staff & HR", "Bookings & Schedules", "Money & Finance", "Customers"];
   var HVIEWS = [["members", "Members"], ["courses", "Courses & lessons"], ["replays", "Replays"], ["prompts", "Prompt Library"]];
   function hubContent(t) { return (D()[t] || []); }
   /** Vimeo or YouTube link → embeddable player URL (or "" if not recognised). */
