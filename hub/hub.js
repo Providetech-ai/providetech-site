@@ -89,8 +89,14 @@
       }
       if (/^\s*([-•*])\s+/.test(ln)) {
         var ul = [];
-        while (i < lines.length && /^\s*([-•*])\s+/.test(lines[i])) ul.push("<li>" + mdInline(lines[i++].replace(/^\s*([-•*])\s+/, "")) + "</li>");
-        out.push("<ul>" + ul.join("") + "</ul>");
+        var isCk = /^\s*[-•*]\s+\[[ xX]\]\s+/.test(ln);
+        while (i < lines.length && /^\s*([-•*])\s+/.test(lines[i])) {
+          var item = lines[i++].replace(/^\s*([-•*])\s+/, ""), ck = /^\[([ xX])\]\s+(.*)$/.exec(item);
+          // "- [ ] task" becomes a real tick box; members' ticks are remembered on their device
+          ul.push(ck ? '<li><label class="ck"><input type="checkbox" data-ck="' + esc(ck[2]) + '"' + (ck[1] !== " " ? " checked" : "") + "><span>" + mdInline(ck[2]) + "</span></label></li>"
+                     : "<li>" + mdInline(item) + "</li>");
+        }
+        out.push("<ul" + (isCk ? ' class="checklist"' : "") + ">" + ul.join("") + "</ul>");
         continue;
       }
       if (/^\s*\d+[.)]\s+/.test(ln)) {
@@ -745,11 +751,23 @@
     var view = !key ? viewHome() : key === "replays" ? viewReplays(parts[1]) : key === "learning" ? viewLearning(parts[1], parts[2]) : key === "prompts" ? viewPrompts(parts[1]) : key === "community" ? viewCommunity(parts[1], parts[2]) : key === "leaderboard" ? viewLeaderboard() : viewSection(key);
     var sy = S.keepScroll ? window.scrollY : 0;
     app.innerHTML = shell(key, view);
+    restoreTicks(r.path);
     if (S.keepScroll) { window.scrollTo(0, sy); S.keepScroll = false; }
     if (S.focus) { var fe = document.getElementById(S.focus); if (fe) { fe.focus(); try { fe.setSelectionRange(fe.value.length, fe.value.length); } catch (e) {} } S.focus = null; }
     document.title = T(key ? PAGES[key] ? PAGES[key][1] : "Hub" : "Home") + " · Builder Hub";
   }
 
+  // Lesson checklists: ticks are saved in this browser per lesson (no account data needed)
+  function tickKey(path, el) { return "pt-ck:" + (S.user && S.user.id || "") + ":" + path + ":" + el.getAttribute("data-ck"); }
+  function restoreTicks(path) {
+    [].forEach.call(app.querySelectorAll("input[data-ck]"), function (el) {
+      try { var v = localStorage.getItem(tickKey(path, el)); if (v !== null) el.checked = v === "1"; } catch (e) {}
+    });
+  }
+  app.addEventListener("change", function (e) {
+    var el = e.target; if (!el || !el.matches || !el.matches("input[data-ck]")) return;
+    try { localStorage.setItem(tickKey(route().path, el), el.checked ? "1" : "0"); } catch (err) {}
+  });
   app.addEventListener("click", function (e) {
     var t = e.target.closest("[data-act]"); if (!t) return;
     var a = t.getAttribute("data-act");

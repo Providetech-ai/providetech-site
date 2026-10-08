@@ -299,3 +299,10 @@ a.chip{color:var(--ink)}a.chip:hover{border-color:var(--line-strong);color:var(-
 .langsel select.input{width:auto;min-height:0;height:32px;padding:0 30px 0 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--ink-2);background-color:var(--white);cursor:pointer}
 .auth{position:relative}
 .auth-lang{position:absolute;top:16px;right:16px}
+
+/* lesson checklists */
+.checklist{list-style:none;padding-left:0}
+.checklist li{margin:6px 0}
+.checklist .ck{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.checklist .ck input{width:18px;height:18px;margin-top:3px;flex-shrink:0;accent-color:var(--blue,#0096FF);cursor:pointer}
+.checklist .ck input:checked + span{color:var(--ink-3,#6A7888);text-decoration:line-through}
