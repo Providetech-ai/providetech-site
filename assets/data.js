@@ -319,6 +319,18 @@
         if (i >= 0) { x.created_at = d[table][i].created_at; d[table][i] = x; } else { x.id = uid(); x.created_at = nowIso(); d[table].push(x); }
         save(d); return later(x);
       },
+      // Delete a batch: refused when anyone paid (or was refunded); unpaid/cancelled reservations go with it.
+      deleteSession: function (id) {
+        var d = load(), s = d.sessions.filter(function (x) { return x.id === id; })[0];
+        if (!s) return rejectLater(fail("NOT_FOUND", "Batch not found."));
+        if (s.format === "hub") return rejectLater(fail("HUB", "The Builder Hub can't be deleted. Set it to Draft to stop selling it on its own."));
+        var money = d.reservations.filter(function (r) { return r.session_id === id && ["paid", "refund_requested", "refunded"].indexOf(r.status) >= 0; }).length;
+        if (money) return rejectLater(fail("HAS_PAID", money + " paid or refunded participant" + (money === 1 ? " is" : "s are") + " in this batch."));
+        var before = d.reservations.length;
+        d.reservations = d.reservations.filter(function (r) { return r.session_id !== id; });
+        d.sessions = d.sessions.filter(function (x) { return x.id !== id; });
+        save(d); return later({ ok: true, code: s.code, removed_reservations: before - d.reservations.length });
+      },
       removeContent: function (table, id) {
         var d = load(); d[table] = (d[table] || []).filter(function (y) { return y.id !== id; });
         if (table === "courses") d.lessons = (d.lessons || []).filter(function (l) { return l.course_id !== id; });
@@ -539,6 +551,18 @@
       removeContent: function (table, id) {
         if (["courses", "lessons", "replays", "prompts"].indexOf(table) < 0) return Promise.reject(fail("TABLE", "Unknown content type."));
         return withSb(function (c) { return q(c.from(table).delete().eq("id", id)); });
+      },
+      deleteSession: function (id) {
+        return withSb(function (c) {
+          return c.rpc("admin_delete_session", { p_id: id }).then(function (res) {
+            if (!res.error) return res.data;
+            var m = res.error.message || "";
+            if (/HAS_PAID/.test(m)) throw fail("HAS_PAID", "Someone already paid in this batch.");
+            if (/HUB/.test(m)) throw fail("HUB", "The Builder Hub can't be deleted. Set it to Draft to stop selling it on its own.");
+            if (/admin_delete_session|schema cache|does not exist/i.test(m)) throw fail("SETUP", "Deleting batches isn't switched on yet. Run the one-time SQL from the setup notes in Supabase → SQL Editor.");
+            throw fail("DB", m || "Couldn't delete the batch.");
+          });
+        });
       },
       // Builder Hub members: provision | resend | grant | extend | revoke
       hub: function (action, payload) {

@@ -405,7 +405,8 @@
       '<div class="batch-stats"><span class="muted num">' + st.pending + " waiting for payment · " + st.refund + " refunds</span><b class=\"num\">" + peso(st.collected) + "</b></div></div>" +
       '<div class="batch-actions"><a class="btn btn-g btn-sm" href="#/participants" data-act="go-batch" data-id="' + esc(s.id) + '">Participants</a>' +
       '<button class="btn btn-g btn-sm" data-act="edit-batch" data-id="' + esc(s.id) + '">Edit</button>' +
-      (s.status === "open" ? '<button class="btn btn-g btn-sm" data-act="copy-link" data-id="' + esc(s.id) + '">' + I.copy + "Reservation link</button>" : "") + "</div></article>";
+      (s.status === "open" ? '<button class="btn btn-g btn-sm" data-act="copy-link" data-id="' + esc(s.id) + '">' + I.copy + "Reservation link</button>" : "") +
+      '<button class="btn btn-g btn-sm" data-act="delete-batch" data-id="' + esc(s.id) + '" style="color:var(--err)">Delete</button>' + "</div></article>";
   }
   function viewWorkshops() {
     var up = upcoming(), past = D().sessions.filter(function (s) { return up.indexOf(s) < 0; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
@@ -481,6 +482,27 @@
       }
     }
     fsel.addEventListener("change", function () { syncFmt(true); }); syncFmt(false);
+  }
+
+  function deleteBatch(s) {
+    if (!s) return;
+    var when = fmtOf(s) === "home" ? "" : " · " + fmtDate(s.date) + (s.time_label ? " · " + s.time_label : "");
+    var rs = resFor(s.id);
+    var money = rs.filter(function (r) { return r.status === "paid" || r.status === "refund_requested" || r.status === "refunded"; }).length;
+    var pend = rs.filter(function (r) { return r.status === "pending"; }).length, canc = rs.length - money - pend;
+    if (money) {
+      openModal("Can't delete " + s.code, '<p style="margin:0">' + money + (money === 1 ? " person has" : " people have") + " paid or been refunded in this batch, so it's kept for your records.</p>" +
+        '<div class="callout info" style="margin-top:12px">To stop showing it on the website, set it to <b>Draft</b> (hidden) or <b>Done</b>.</div>',
+        { submit: s.status === "draft" ? "" : "Set to Draft", onSubmit: function () { var x = {}; Object.keys(s).forEach(function (k) { x[k] = s[k]; }); x.status = "draft"; act(PT.admin.saveSession(x), s.code + " hidden from the website"); } });
+      return;
+    }
+    var extra = [];
+    if (pend) extra.push(pend + " unpaid reservation" + (pend === 1 ? "" : "s"));
+    if (canc) extra.push(canc + " cancelled reservation" + (canc === 1 ? "" : "s"));
+    openModal("Delete " + s.code + "?", '<p style="margin:0"><b>' + esc(s.title) + "</b>" + esc(when) + "</p>" +
+      '<p style="margin:12px 0 0">This permanently removes the batch' + (extra.length ? " and its " + esc(extra.join(" and ")) : "") + ". It can't be undone.</p>" +
+      (pend ? '<div class="callout warn" style="margin-top:12px">Someone may still be paying for an unpaid reservation. If you\'re not sure, set the batch to Draft instead.</div>' : ""),
+      { submit: "Delete batch", danger: true, onSubmit: function () { act(PT.admin.deleteSession(s.id), s.code + " deleted"); } });
   }
 
   /* -------------------------------------------------------------- participants */
@@ -935,6 +957,7 @@
       case "modal-close": e.preventDefault(); closeModal(); break;
       case "new-batch": batchForm(null); break;
       case "edit-batch": batchForm(sess(id)); break;
+      case "delete-batch": deleteBatch(sess(id)); break;
       case "copy-link": copyText(location.origin + "/checkout.html?batch=" + encodeURIComponent(id), "Reservation link copied"); break;
       case "go-batch": e.preventDefault(); S.p.batch = id; S.p.tab = "all"; S.p.sel = null; go("participants"); break;
       case "go-tab": e.preventDefault(); var nx = nextSession(); var rr = D().reservations.filter(function (x) { return x.status === id; })[0];
