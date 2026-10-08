@@ -107,7 +107,7 @@
     return D().sessions.filter(function (s) { return daysUntil(s.date) >= 0 && s.status !== "done"; })
       .sort(function (a, b) { return a.date < b.date ? -1 : 1; });
   }
-  function nextSession() { return upcoming().filter(function (s) { return s.status === "open" || s.status === "full"; })[0] || null; }
+  function nextSession() { return upcoming().filter(function (s) { return (s.status === "open" || s.status === "full") && fmtOf(s) !== "hub"; })[0] || null; }
   function holdEnd(r) { return r.hold_until ? new Date(r.hold_until) : new Date(new Date(r.created_at).getTime() + (Number(setting("hold_hours")) || 1) * 3600000); }
   function holdActive(r) { return r.status === "pending" && holdEnd(r).getTime() > Date.now(); }
   function holdExpired(r) { return r.status === "pending" && !holdActive(r); }
@@ -378,7 +378,22 @@
   }
 
   /* -------------------------------------------------------------- workshops */
+  /* Builder Hub sold on its own at checkout: no seats or dates, just sales. */
+  function hubCard(s) {
+    var rs = resFor(s.id), paid = rs.filter(function (r) { return r.status === "paid" || r.status === "refund_requested"; });
+    var pend = rs.filter(function (r) { return r.status === "pending"; }).length;
+    var total = paid.reduce(function (t, r) { return t + (Number(r.amount) || 0); }, 0);
+    var on = s.status === "open";
+    return '<article class="card batch"><div class="batch-top"><div><span class="mono-label">Sold on its own</span><h3>' + esc(s.title) + "</h3></div>" +
+      (on ? '<span class="pill ok">On sale</span>' : '<span class="pill mute">Not on sale</span>') + "</div>" +
+      '<div class="meta">Customers can buy the Builder Hub without a workshop.<br>No seats or dates: access starts as soon as they pay.' +
+      (on ? "" : '<br><span class="warnTxt">Set it back to Open to sell the Builder Hub on its own.</span>') + "</div>" +
+      '<div class="batch-stats"><span><b class="num">' + paid.length + "</b> sold · " + pend + ' waiting for payment</span><b class="num">' + peso(total) + "</b></div>" +
+      '<div class="batch-actions"><a class="btn btn-g btn-sm" href="#/participants" data-act="go-batch" data-id="' + esc(s.id) + '">Buyers</a>' +
+      '<button class="btn btn-g btn-sm" data-act="edit-batch" data-id="' + esc(s.id) + '">Edit</button></div></article>';
+  }
   function batchCard(s) {
+    if (fmtOf(s) === "hub") return hubCard(s);
     var st = stats(s), lab = sessLabel(s);
     var pct = function (n) { return (n / s.capacity * 100).toFixed(1) + "%"; };
     var fm = fmtOf(s);
@@ -452,6 +467,7 @@
     var fsel = document.getElementById("bformat");
     function syncFmt(changed) {
       var v = fsel.value, dlg = document.getElementById("modal");
+      ["bcap", "bprice", "btime", "bvenue"].forEach(function (id) { var el = document.getElementById(id); if (el) el.closest(".field").hidden = v === "hub"; });
       [].forEach.call(dlg.querySelectorAll("[data-fm]"), function (el) { var k = el.getAttribute("data-fm"); el.hidden = k === "dated" ? (v === "home" || v === "hub") : k !== v; });
       if (changed && isNew) {
         var pre = { online: "Batch ", f2f: "F2F ", home: "1-on-1" }[v];
