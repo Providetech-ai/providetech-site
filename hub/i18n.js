@@ -115,7 +115,7 @@
     ["This lesson is being written.", "Isinusulat pa ang lesson na ito.", "Gisulat pa kining lesson."],
     ["← All courses", "← Lahat ng courses", "← Tanang courses"],
     ["Short, practical written lessons you can read in a few minutes. Mark lessons as done to track your progress.", "Maiikli at praktikal na lessons na mababasa mo sa ilang minuto lang. Markahang tapos ang bawat lesson para makita ang progress mo.", "Mubo ug praktikal nga lessons nga mabasa nimo sa pipila ka minuto. Markahi nga nahuman ang matag lesson aron makita ang imong progress."],
-    ["The lessons are in simple English, the same language you'll use with Claude.", "Nasa simpleng English ang mga lesson, ang parehong wika na gagamitin mo kay Claude.", "Naa sa simple nga English ang mga lesson, parehas sa pinulongan nga imong gamiton kang Claude."],
+    ["The prompts you copy stay in English, because Claude builds best that way.", "Naka-English pa rin ang mga prompt na kokopyahin mo, dahil mas maganda ang gawa ni Claude sa ganoon.", "Naka-English gihapon ang mga prompt nga imong kopyahon, kay mas nindot ang himo ni Claude ana."],
     ["{n} lesson", "{n} lesson", "{n} ka lesson"],
     ["{n} lessons", "{n} lessons", "{n} ka lessons"],
     ["Lesson not found", "Hindi makita ang lesson", "Wala makit-an ang lesson"],

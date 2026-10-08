@@ -707,3 +707,10 @@ alter table public.lessons add constraint lessons_description_check check (char_
 alter table public.courses add column if not exists slug text;
 create unique index if not exists courses_slug_idx on public.courses (slug) where slug is not null;
 alter table public.lessons add column if not exists section text not null default '' check (char_length(section) <= 80);
+
+-- ---------- Course translations (Tagalog / Bisaya). The hub shows these when a member picks that language; empty = English. ----------
+alter table public.courses add column if not exists title_tl text not null default '', add column if not exists title_ceb text not null default '', add column if not exists description_tl text not null default '', add column if not exists description_ceb text not null default '';
+alter table public.lessons add column if not exists title_tl text not null default '', add column if not exists title_ceb text not null default '', add column if not exists description_tl text not null default '', add column if not exists description_ceb text not null default '';
+do $$ begin
+  alter table public.lessons add constraint lessons_desc_tl_len check (char_length(description_tl) <= 40000), add constraint lessons_desc_ceb_len check (char_length(description_ceb) <= 40000);
+exception when duplicate_object then null; end $$;

@@ -468,7 +468,7 @@
     var cont = null;
     C().courses.some(function (c) { var nx = lessonsOf(c.id).filter(function (l) { return !C().done[l.id]; })[0]; if (nx && progress(c.id).done) { cont = { c: c, l: nx }; return true; } return false; });
     if (!cont && C().courses.length) { var c0 = C().courses[0], l0 = lessonsOf(c0.id).filter(function (l) { return !C().done[l.id]; })[0]; if (l0) cont = { c: c0, l: l0 }; }
-    var contCard = cont ? '<a class="card continue" href="' + (cont.c.slug === "prompt-library" ? "#/prompts/" : "#/learning/" + esc(cont.c.id) + "/") + esc(cont.l.id) + '"><span class="ic">' + ic("book", 20) + '</span><span style="min-width:0"><span class="mono-label">' + (progress(cont.c.id).done ? T("Continue learning") : T("Start here")) + "</span><b>" + esc(cont.l.title) + '</b><small class="muted">' + esc(cont.c.title) + " · " + T("{n}% done", { n: progress(cont.c.id).pct }) + '</small></span><span class="go">→</span></a>' : "";
+    var contCard = cont ? '<a class="card continue" href="' + (cont.c.slug === "prompt-library" ? "#/prompts/" : "#/learning/" + esc(cont.c.id) + "/") + esc(cont.l.id) + '"><span class="ic">' + ic("book", 20) + '</span><span style="min-width:0"><span class="mono-label">' + (progress(cont.c.id).done ? T("Continue learning") : T("Start here")) + "</span><b>" + esc(loc(cont.l, "title")) + '</b><small class="muted">' + esc(loc(cont.c, "title")) + " · " + T("{n}% done", { n: progress(cont.c.id).pct }) + '</small></span><span class="go">→</span></a>' : "";
     return '<section class="card hero"><span class="mono-label">' + T("Member workspace") + "</span><h1>" + T("Welcome, {name}.", { name: esc(first(m.name || m.email)) }) + "</h1><p>" + T("Your PROVIDETECH Builder Hub: recordings, step-by-step tutorials, prompts and a community of builders. New content is added every month.") + "</p>" +
       (m.team ? '<span class="until">' + T("Signed in as the PROVIDETECH Team") + "</span>" : '<span class="until">' + T("Access until {date}", { date: esc(fmtDate(m.access_until)) }) + "</span>") + "</section>" +
       contCard + '<div class="grid cols3">' + tiles + "</div>";
@@ -491,6 +491,14 @@
   }
   /* ---------- courses: outline + lesson pages (shared by Learning and Prompt Library) ---------- */
   function libCourse() { return C().courses.filter(function (c) { return c.slug === "prompt-library"; })[0] || null; }
+  /* Course text in the picked language (Tagalog / Bisaya), falling back to English. The Prompt Library stays in English. */
+  function loc(o, f) {
+    if (!o) return "";
+    if (LANG === "en") return o[f];
+    var lib = libCourse();
+    if (lib && (o.id === lib.id || o.course_id === lib.id)) return o[f];
+    return o[f + "_" + LANG] || o[f];
+  }
   function sectionsOf(cid) {
     var out = [], idx = {};
     lessonsOf(cid).forEach(function (l) { var k = l.section || ""; if (!(k in idx)) { idx[k] = out.length; out.push({ name: k, lessons: [] }); } out[idx[k]].lessons.push(l); });
@@ -506,7 +514,7 @@
         return '<div class="osec">' + (named ? '<div class="osec-h"><span class="onum">' + two(si + 1) + "</span><h2>" + esc(sec.name || T("Lessons")) + "</h2></div>" : "") +
           '<ol class="lessons">' + sec.lessons.map(function (l2) {
             n++; var d = !!C().done[l2.id];
-            return '<li><a href="' + base + esc(l2.id) + '"><span class="ln' + (d ? " ok" : "") + '">' + (d ? "✓" : n) + '</span><span class="lt">' + esc(l2.title) + "</span>" + (l2.duration_min ? '<span class="muted">' + esc(l2.duration_min + "m") + "</span>" : "") + "</a></li>";
+            return '<li><a href="' + base + esc(l2.id) + '"><span class="ln' + (d ? " ok" : "") + '">' + (d ? "✓" : n) + '</span><span class="lt">' + esc(loc(l2, "title")) + "</span>" + (l2.duration_min ? '<span class="muted">' + esc(l2.duration_min + "m") + "</span>" : "") + "</a></li>";
           }).join("") + "</ol></div>";
       }).join("") + "</section>";
   }
@@ -517,26 +525,26 @@
     var done = !!C().done[l.id], prev = ls[i - 1], next = ls[i + 1];
     var side = '<nav class="lnav" aria-label="' + T("Lessons") + '"><a class="back" href="' + backHref + '">← ' + esc(T(backLabel)) + "</a>" + sectionsOf(c.id).map(function (sec) {
       return (sec.name ? '<div class="lnav-h">' + esc(sec.name) + "</div>" : "") + sec.lessons.map(function (x) {
-        return '<a class="lnav-i' + (x.id === l.id ? " on" : "") + (C().done[x.id] ? " ok" : "") + '" href="' + base + esc(x.id) + '"' + (x.id === l.id ? ' aria-current="page"' : "") + "><span>" + esc(x.title) + "</span></a>";
+        return '<a class="lnav-i' + (x.id === l.id ? " on" : "") + (C().done[x.id] ? " ok" : "") + '" href="' + base + esc(x.id) + '"' + (x.id === l.id ? ' aria-current="page"' : "") + "><span>" + esc(loc(x, "title")) + "</span></a>";
       }).join("");
     }).join("") + "</nav>";
     var lbar = '<div class="lesson-bar"><button class="btn ' + (done ? "btn-g" : "btn-p") + '" data-act="done" data-id="' + esc(l.id) + '" data-on="' + (done ? "0" : "1") + '">' + (done ? T("✓ Completed · undo") : T("Mark as done")) + "</button>" +
       '<span class="nav-pn">' + (prev ? '<a class="btn btn-g" href="' + base + esc(prev.id) + '">' + T("← Previous") + "</a>" : "") + (next ? '<a class="btn btn-g" href="' + base + esc(next.id) + '">' + T("Next →") + "</a>" : "") + "</span></div>";
-    return '<div class="lwrap">' + side + '<div class="lmain"><header class="page-head"><span class="mono-label">' + (l.section ? esc(l.section) + " · " : "") + T("Lesson {n} of {t}", { n: i + 1, t: ls.length }) + (l.duration_min ? " · " + esc(readTime(l.duration_min)) : "") + "</span><h1>" + esc(l.title) + "</h1></header>" +
-      '<div class="read"><article class="card lesson-body md">' + (l.description ? md(l.description) : '<p class="muted">' + T("This lesson is being written.") + '</p>') + "</article>" + lbar + "</div></div></div>";
+    return '<div class="lwrap">' + side + '<div class="lmain"><header class="page-head"><span class="mono-label">' + (l.section ? esc(l.section) + " · " : "") + T("Lesson {n} of {t}", { n: i + 1, t: ls.length }) + (l.duration_min ? " · " + esc(readTime(l.duration_min)) : "") + "</span><h1>" + esc(loc(l, "title")) + "</h1></header>" +
+      '<div class="read"><article class="card lesson-body md">' + (l.description ? md(loc(l, "description")) : '<p class="muted">' + T("This lesson is being written.") + '</p>') + "</article>" + lbar + "</div></div></div>";
   }
   function viewLearning(cid, lid) {
     var lib = libCourse(), cs = C().courses.filter(function (c) { return c !== lib; });
     if (lib && cid === lib.id) { location.hash = "#/prompts" + (lid ? "/" + lid : ""); return ""; }
     var c = cs.filter(function (x) { return x.id === cid; })[0];
     if (cid && !c) return emptyState("book", "Course not found", "It may have been moved. Go back to Learning.");
-    if (cid && lid) return lessonPage(c, lid, "#/learning/" + esc(c.id) + "/", "#/learning/" + esc(c.id), c.title);
-    if (cid) return '<a class="back" href="#/learning">' + T("← All courses") + '</a><header class="page-head"><h1>' + esc(c.title) + "</h1>" + (c.description ? "<p>" + esc(c.description) + "</p>" : "") + "</header>" + courseOutline(c, "#/learning/" + esc(c.id) + "/");
-    var head = '<header class="page-head"><h1>' + T("Learning") + "</h1><p>" + T("Short, practical written lessons you can read in a few minutes. Mark lessons as done to track your progress.") + (LANG !== "en" ? " " + T("The lessons are in simple English, the same language you'll use with Claude.") : "") + "</p></header>";
+    if (cid && lid) return lessonPage(c, lid, "#/learning/" + esc(c.id) + "/", "#/learning/" + esc(c.id), loc(c, "title"));
+    if (cid) return '<a class="back" href="#/learning">' + T("← All courses") + '</a><header class="page-head"><h1>' + esc(loc(c, "title")) + "</h1>" + (c.description ? "<p>" + esc(loc(c, "description")) + "</p>" : "") + "</header>" + courseOutline(c, "#/learning/" + esc(c.id) + "/");
+    var head = '<header class="page-head"><h1>' + T("Learning") + "</h1><p>" + T("Short, practical written lessons you can read in a few minutes. Mark lessons as done to track your progress.") + (LANG !== "en" ? " " + T("The prompts you copy stay in English, because Claude builds best that way.") : "") + "</p></header>";
     if (!cs.length) return head + emptyState("book", "First course coming soon", "Courses and lessons will appear here. New ones are added every month.");
     return head + '<div class="grid cols3">' + cs.map(function (c3) {
       var p3 = progress(c3.id), ls3 = lessonsOf(c3.id), total = ls3.reduce(function (t, x) { return t + (Number(x.duration_min) || 0); }, 0);
-      return '<a class="card tile" href="#/learning/' + esc(c3.id) + '"><span class="ic">' + ic("book", 20) + "</span><h3>" + esc(c3.title) + "</h3><p>" + esc(c3.description || "") + '</p><span class="muted" style="font-size:13px">' + esc(T(p3.total === 1 ? "{n} lesson" : "{n} lessons", { n: p3.total })) + (total ? " · " + esc(readTime(total)) : "") + (p3.done ? " · " + esc(T("{n}% done", { n: p3.pct })) : "") + "</span>" + bar(p3.pct) + "</a>";
+      return '<a class="card tile" href="#/learning/' + esc(c3.id) + '"><span class="ic">' + ic("book", 20) + "</span><h3>" + esc(loc(c3, "title")) + "</h3><p>" + esc(loc(c3, "description") || "") + '</p><span class="muted" style="font-size:13px">' + esc(T(p3.total === 1 ? "{n} lesson" : "{n} lessons", { n: p3.total })) + (total ? " · " + esc(readTime(total)) : "") + (p3.done ? " · " + esc(T("{n}% done", { n: p3.pct })) : "") + "</span>" + bar(p3.pct) + "</a>";
     }).join("") + "</div>";
   }
   var CAT_ORDER = ["Sales & Orders", "Inventory & Stock", "Staff & HR", "Bookings & Schedules", "Money & Finance", "Customers"];
