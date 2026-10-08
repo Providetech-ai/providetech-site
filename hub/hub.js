@@ -533,12 +533,15 @@
     var head = '<header class="page-head"><h1>Prompt Library</h1><p>' + esc(lib && lib.description ? lib.description : "Copy-ready prompts for real business tasks. Replace the parts in [BRACKETS] with your own details.") + "</p></header>";
     var outline = lib ? courseOutline(lib, "#/prompts/") : "";
     var nsec = lib ? sectionsOf(lib.id).filter(function (x) { return x.name; }).length : 0;
-    var quickHead = '<div class="osec-h" style="margin-top:28px"><span class="onum">' + two(nsec + 1) + '</span><h2>Quick prompts</h2></div><p class="muted" style="margin:4px 0 0">Everyday business prompts: marketing, sales, customer service, operations, content and coding. Replace the [BRACKETS] and copy.</p>';
+    var quickHead = '<div class="osec-h" style="margin-top:28px"><span class="onum">' + two(nsec + 1) + '</span><h2>Everyday Business Prompts</h2></div>' +
+      '<p class="muted" style="margin:4px 0 0">No building needed. Use these for daily tasks like replying to customers, writing posts and planning your week.</p>' +
+      '<ol class="howto"><li><b>Copy</b> a prompt below</li><li><b>Paste</b> it into Claude (claude.ai or the Claude app)</li><li><b>Replace</b> the [BRACKETS] with your own details, then send</li></ol>';
     if (!ps.length) return head + outline + (lib ? "" : emptyState("prompt", "The library is being filled", "Prompts will appear here soon. Your membership already includes them."));
     var cats = ps.map(function (p) { return p.category; }).filter(function (c, i, a) { return a.indexOf(c) === i; })
       .sort(function (a, b) { var ia = CAT_ORDER.indexOf(a), ib = CAT_ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || (a < b ? -1 : 1); });
     var q = S.pq.trim().toLowerCase();
-    var list = ps.filter(function (p) { return (!S.pcat || p.category === S.pcat) && (!q || (p.title + " " + p.body + " " + p.category).toLowerCase().indexOf(q) >= 0); });
+    var list = ps.filter(function (p) { return (!S.pcat || p.category === S.pcat) && (!q || (p.title + " " + p.body + " " + p.category).toLowerCase().indexOf(q) >= 0); })
+      .sort(function (a, b) { return (cats.indexOf(a.category) - cats.indexOf(b.category)) || ((a.sort || 0) - (b.sort || 0)); });
     return head + outline + (lib ? quickHead : "") + '<div class="pfilter"><div class="chips" role="group" aria-label="Filter by category"><button class="chip-btn" data-act="pcat" data-id="" aria-pressed="' + !S.pcat + '">All</button>' +
       cats.map(function (c) { return '<button class="chip-btn" data-act="pcat" data-id="' + esc(c) + '" aria-pressed="' + (S.pcat === c) + '">' + esc(c) + "</button>"; }).join("") + "</div>" +
       '<label class="psearch"><span class="sr-only">Search prompts</span><input class="input" id="pq" type="search" placeholder="Search prompts" value="' + esc(S.pq) + '"></label></div>' +
