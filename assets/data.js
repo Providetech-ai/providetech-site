@@ -64,7 +64,7 @@
   /* =====================================================================
      DEMO DRIVER — localStorage
      ===================================================================== */
-  var STORE_KEY = "pt-demo-v1";
+  var STORE_KEY = "pt-demo-v2";
 
   function seed() {
     var today = new Date(); today.setHours(9, 0, 0, 0);
@@ -79,6 +79,8 @@
 
     var s06 = { id: "batch-06", code: "Batch 06", title: "AI Business Systems Workshop", date: ymd(addDays(today, -17)), time_label: "9:00 AM – 5:00 PM", venue: "Online via Zoom", capacity: 30, price: 999, status: "done", created_at: at(60, 10, 0) };
     var s07 = { id: "batch-07", code: "Batch 07", title: "AI Business Systems Workshop", date: ymd(addDays(today, 11)), time_label: "9:00 AM – 5:00 PM", venue: "Online via Zoom", zoom_link: "https://zoom.us/j/0000000000?pwd=demo", zoom_notes: "Meeting ID: 000 000 0000 · Passcode: demo", capacity: 30, price: 999, status: "open", created_at: at(30, 10, 0) };
+    var s09 = { id: "f2f-01", code: "F2F 01", title: "Face-to-Face AI Workshop", format: "f2f", date: ymd(addDays(today, 18)), time_label: "9:00 AM – 5:00 PM", venue: "Cebu City (exact venue TBA)", capacity: 15, price: 5999, status: "open", created_at: at(5, 10, 0) };
+    var s10 = { id: "one-on-one", code: "1-on-1", title: "1-on-1 Coaching (Door-to-Door)", format: "home", date: "2099-12-31", time_label: "", venue: "Your home or office", capacity: 30, price: 9999, status: "open", created_at: at(5, 10, 0) };
     var s08 = { id: "batch-08", code: "Batch 08", title: "AI Business Systems Workshop", date: ymd(addDays(today, 39)), time_label: "9:00 AM – 5:00 PM", venue: "", capacity: 30, price: 999, status: "draft", created_at: at(2, 10, 0) };
 
     var reservations = [], n = 0;
@@ -125,7 +127,7 @@
       { id: "q-5", name: "Ana Bayan", business: "Bayan Tutorials", email: "ana@bayantutorials.example.com", phone: "9391112045", need: "Student, schedule & payment management", message: "Two branches, 180 students. Need schedules and payment tracking.", source: "Discuss Your Business Idea", status: "proposal", notes: "Proposal sent. Follow up next week.", created_at: at(6, 10, 0) },
       { id: "q-6", name: "Jun Ocampo", business: "Northpoint Realty", email: "jun@northpoint.example.com", phone: "9269990321", need: "Property & lead management", message: "Agents track leads in personal notebooks.", source: "Discuss Your Business Idea", status: "won", notes: "Project started.", created_at: at(21, 9, 30) }
     ];
-    return { v: 1, sessions: [s06, s07, s08], reservations: reservations, inquiries: inquiries, settings: clone(DEFAULT_SETTINGS) };
+    return { v: 1, sessions: [s06, s07, s08, s09, s10], reservations: reservations, inquiries: inquiries, settings: clone(DEFAULT_SETTINGS) };
   }
 
   function load() {
@@ -168,6 +170,7 @@
     if (l === "ceb") return "ceb";
     return "en";
   }
+  function cleanFormat(f) { return ["online", "f2f", "home"].indexOf(f) >= 0 ? f : "online"; }
   function cleanZoom(u) { u = String(u || "").trim(); return /^https:\/\/\S+$/.test(u) ? u.slice(0, 500) : ""; }
 
   var demo = {
@@ -192,19 +195,21 @@
       var prev = d.reservations.filter(function (x) { return x.session_id === s.id && ACTIVE[x.status] && String(x.email).toLowerCase() === cleanText(r.email, 200).toLowerCase(); })[0];
       if (prev && prev.status === "pending" && prev.phone === cleanPhone(r.phone)) {
         var ap = hubAddonPrice(d, r.addon);
-        prev.method = r.method; prev.lang = cleanLang(r.lang); prev.addon_hub = ap > 0; prev.addon_amount = ap; prev.amount = s.price + ap;
+        prev.method = r.method; prev.lang = cleanLang(r.lang); if (s.format === "home") { prev.address = cleanText(r.address, 300); prev.schedule_pref = cleanText(r.schedule_pref, 300); } prev.addon_hub = ap > 0; prev.addon_amount = ap; prev.amount = s.price + ap;
         prev.history.push({ at: nowIso(), text: "Came back to finish payment" + (ap ? " · with Builder Hub" : "") }); save(d);
         return later({ id: prev.id });
       }
       if (prev) return rejectLater(fail("DUPLICATE", "This email already has a seat in this session."));
       if (activeCount(d, s.id) >= s.capacity) return rejectLater(fail("FULL", "This session is full."));
       if (["gcash", "card", "qrph"].indexOf(r.method) < 0) return rejectLater(fail("METHOD", "Choose a payment method."));
+      var home = s.format === "home", addr = home ? cleanText(r.address, 300) : "", pref = home ? cleanText(r.schedule_pref, 300) : "";
+      if (home && addr.length < 8) return rejectLater(fail("ADDRESS", "Please enter the full address where we'll visit you."));
       var created = nowIso();
       var row = {
         id: uid(), session_id: s.id, name: cleanText(r.name, 120), email: cleanText(r.email, 200).toLowerCase(), phone: cleanPhone(r.phone),
         method: r.method, status: "pending", source: cleanText(r.source || "Website", 60), ref: "", amount: s.price + hubAddonPrice(d, r.addon), notes: "",
         addon_hub: hubAddonPrice(d, r.addon) > 0, addon_amount: hubAddonPrice(d, r.addon), hold_until: new Date(Date.now() + (Number(d.settings.hold_hours) || 1) * 3600000).toISOString(),
-        refund_reason: "", lang: cleanLang(r.lang), zoom_email_sent_at: null, created_at: created, paid_at: null, history: [{ at: created, text: "Seat reserved on website" }]
+        refund_reason: "", lang: cleanLang(r.lang), address: addr, schedule_pref: pref, zoom_email_sent_at: null, created_at: created, paid_at: null, history: [{ at: created, text: home ? "1-on-1 coaching booked on website" : "Seat reserved on website" }]
       };
       d.reservations.push(row); save(d);
       return later({ id: row.id });
@@ -239,7 +244,7 @@
       saveSession: function (s) {
         var d = load(), i = -1;
         d.sessions.forEach(function (x, k) { if (x.id === s.id) i = k; });
-        var row = { id: s.id || uid(), code: cleanText(s.code, 60), title: cleanText(s.title, 160), date: s.date, time_label: cleanText(s.time_label, 80),
+        var row = { id: s.id || uid(), code: cleanText(s.code, 60), title: cleanText(s.title, 160), format: cleanFormat(s.format), date: s.date, time_label: cleanText(s.time_label, 80),
           venue: cleanText(s.venue, 200), zoom_link: cleanZoom(s.zoom_link), zoom_notes: String(s.zoom_notes || "").trim().slice(0, 1000),
           capacity: Math.max(1, parseInt(s.capacity, 10) || 1), price: Math.max(0, parseInt(s.price, 10) || 0), status: s.status,
           created_at: i >= 0 ? d.sessions[i].created_at : nowIso() };
@@ -279,7 +284,7 @@
         if (!r) return rejectLater(fail("NOT_FOUND", "Reservation not found."));
         var s = d.sessions.filter(function (x) { return x.id === r.session_id; })[0] || {};
         if (r.status !== "paid") return rejectLater(fail("NOT_PAID", "The Zoom link is only sent to paid participants."));
-        if (!cleanZoom(s.zoom_link)) return rejectLater(fail("NO_ZOOM_LINK", "Add the Zoom link to " + (s.code || "this batch") + " in Workshops first."));
+        if (cleanFormat(s.format) === "online" && !cleanZoom(s.zoom_link)) return rejectLater(fail("NO_ZOOM_LINK", "Add the Zoom link to " + (s.code || "this batch") + " in Workshops first."));
         var at = nowIso(); r.zoom_email_sent_at = at;
         r.history.push({ at: at, text: "Zoom link emailed to " + r.email + " (demo: no real email sent)" });
         save(d); return later({ ok: true, sent_at: at, demo: true });
@@ -373,7 +378,7 @@
   var live = {
     mode: "live",
     ready: loadSupabase,
-    publicSessions: function () { return withSb(function (c) { return q(c.rpc("public_sessions")); }); },
+    publicSessions: function () { return withSb(function (c) { return q(c.rpc("public_sessions_v2")); }); },
     publicSettings: function () {
       return withSb(function (c) {
         return q(c.from("settings").select("key,value").in("key", PUBLIC_SETTING_KEYS)).then(function (rows) {
@@ -386,8 +391,9 @@
     reserveSeat: function (r) {
       try { validReservation(r); } catch (e) { return Promise.reject(e); }
       return withSb(function (c) {
-        return q(c.rpc("reserve_seat_v3", { p_session: r.session_id, p_name: cleanText(r.name, 120), p_email: cleanText(r.email, 200).toLowerCase(),
-          p_phone: cleanPhone(r.phone), p_method: r.method, p_source: cleanText(r.source || "Website", 60), p_lang: cleanLang(r.lang), p_addon: !!r.addon })).then(function (id) { return { id: id }; });
+        return q(c.rpc("reserve_seat_v4", { p_session: r.session_id, p_name: cleanText(r.name, 120), p_email: cleanText(r.email, 200).toLowerCase(),
+          p_phone: cleanPhone(r.phone), p_method: r.method, p_source: cleanText(r.source || "Website", 60), p_lang: cleanLang(r.lang), p_addon: !!r.addon,
+          p_address: cleanText(r.address, 300), p_pref: cleanText(r.schedule_pref, 300) })).then(function (id) { return { id: id }; });
       });
     },
     // Personal PayMongo checkout for a reservation → { checkout_url } (or { already_paid })
@@ -450,7 +456,7 @@
         });
       },
       saveSession: function (s) {
-        var row = { code: cleanText(s.code, 60), title: cleanText(s.title, 160), date: s.date, time_label: cleanText(s.time_label, 80), venue: cleanText(s.venue, 200),
+        var row = { code: cleanText(s.code, 60), title: cleanText(s.title, 160), format: cleanFormat(s.format), date: s.date, time_label: cleanText(s.time_label, 80), venue: cleanText(s.venue, 200),
           zoom_link: cleanZoom(s.zoom_link), zoom_notes: String(s.zoom_notes || "").trim().slice(0, 1000),
           capacity: Math.max(1, parseInt(s.capacity, 10) || 1), price: Math.max(0, parseInt(s.price, 10) || 0), status: s.status };
         return withSb(function (c) {

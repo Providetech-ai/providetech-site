@@ -62,17 +62,19 @@ Deno.serve(async (req) => {
       attributes: {
         billing: { name: r.name, email: r.email, phone: "+63" + r.phone },
         line_items: [
-          { currency: "PHP", amount: seat, name: `${s.title} (${s.code})`, quantity: 1, description: `${s.date}${s.time_label ? " · " + s.time_label : ""}` },
+          s.format === "home"
+            ? { currency: "PHP", amount: seat, name: s.title, quantity: 1, description: `Visit to: ${String(r.address || "").slice(0, 200)} · schedule confirmed by phone` }
+            : { currency: "PHP", amount: seat, name: `${s.title} (${s.code})`, quantity: 1, description: `${s.date}${s.time_label ? " · " + s.time_label : ""}${s.format === "f2f" && s.venue ? " · " + s.venue : ""}`.slice(0, 250) },
           ...(addon ? [{ currency: "PHP", amount: addon, name: "PROVIDETECH Builder Hub (1 year)", quantity: 1, description: "Members' hub: recordings, tutorials, prompts, community" }] : []),
         ],
         payment_method_types: methods,
-        description: `${s.title} · ${s.code} · seat for ${r.name}${addon ? " + Builder Hub" : ""}`,
+        description: `${s.title} · ${s.format === "home" ? "1-on-1 booking" : s.code + " · seat"} for ${r.name}${addon ? " + Builder Hub" : ""}`,
         reference_number: `PT-${String(r.id).slice(0, 8).toUpperCase()}`,
         metadata: { reservation_id: r.id, batch: s.code },
         send_email_receipt: true,
         show_description: true,
         show_line_items: true,
-        success_url: `${site}${page}?paid=1&lang=${lang}`,
+        success_url: `${site}${page}?paid=1&lang=${lang}&f=${s.format || "online"}`,
         cancel_url: `${site}${page}?batch=${s.id}&cancelled=1`,
       },
     },

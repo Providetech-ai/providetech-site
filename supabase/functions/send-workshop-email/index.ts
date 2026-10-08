@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
   if (!s) return json({ error: "NOT_FOUND", message: "Batch not found." }, 404);
 
   if (body.preview === true) {
-    if (!s.zoom_link) return json({ error: "NO_ZOOM_LINK", message: `Add the Zoom link to ${s.code} in Workshops first.` }, 422);
+    if ((s.format || "online") === "online" && !s.zoom_link) return json({ error: "NO_ZOOM_LINK", message: `Add the Zoom link to ${s.code} in Workshops first.` }, 422);
     return json({ ok: true, preview: true, to: r.email, ...buildEmail(r, s) });
   }
 

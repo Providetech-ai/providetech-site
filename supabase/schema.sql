@@ -714,3 +714,89 @@ alter table public.lessons add column if not exists title_tl text not null defau
 do $$ begin
   alter table public.lessons add constraint lessons_desc_tl_len check (char_length(description_tl) <= 40000), add constraint lessons_desc_ceb_len check (char_length(description_ceb) <= 40000);
 exception when duplicate_object then null; end $$;
+-- ---------- Workshop formats: online (Zoom) · f2f (face-to-face at a venue) · home (1-on-1 door-to-door coaching) ----------
+alter table public.sessions add column if not exists format text not null default 'online';
+do $$ begin
+  alter table public.sessions add constraint sessions_format_chk check (format in ('online','f2f','home'));
+exception when duplicate_object then null; end $$;
+alter table public.reservations add column if not exists address text not null default '';
+alter table public.reservations add column if not exists schedule_pref text not null default '';
+do $$ begin
+  alter table public.reservations add constraint reservations_address_len check (char_length(address) <= 300), add constraint reservations_pref_len check (char_length(schedule_pref) <= 300);
+exception when duplicate_object then null; end $$;
+
+-- Open sessions with format (1-on-1 coaching uses the placeholder date 2099-12-31 = "scheduled with you")
+create or replace function public.public_sessions_v2()
+returns table (id uuid, code text, title text, date date, time_label text, venue text,
+               capacity int, price int, seats_left int, format text)
+language sql stable security definer set search_path = public as $$
+  select s.id, s.code, s.title, s.date, s.time_label, s.venue, s.capacity, s.price,
+         greatest(0, s.capacity - public.seats_taken(s.id))::int as seats_left, s.format
+  from public.sessions s
+  where s.status = 'open' and s.date >= current_date
+  order by s.date;
+$$;
+revoke all on function public.public_sessions_v2() from public;
+grant execute on function public.public_sessions_v2() to anon, authenticated;
+
+-- Reserve a seat or a 1-on-1 booking (price always from the session + settings, never the browser)
+create or replace function public.reserve_seat_v4(
+  p_session uuid, p_name text, p_email text, p_phone text, p_method text, p_source text default 'Website', p_lang text default 'en',
+  p_addon boolean default false, p_address text default '', p_pref text default '')
+returns uuid language plpgsql security definer set search_path = public as $$
+declare
+  s public.sessions%rowtype;
+  new_id uuid;
+  prev public.reservations%rowtype;
+  v_hold timestamptz := now() + make_interval(hours => public.hold_hours());
+  v_addon_price int := case when coalesce(p_addon, false) then public.hub_offer_price() else null end;
+  v_want boolean := v_addon_price is not null;
+  v_lang text := case when p_lang in ('en','tl','ceb') then p_lang else 'en' end;
+  v_addr text := left(regexp_replace(trim(coalesce(p_address, '')), '\s+', ' ', 'g'), 300);
+  v_pref text := left(trim(coalesce(p_pref, '')), 300);
+  v_what text;
+begin
+  if coalesce(trim(p_name), '') !~ '\S+\s+\S+' then raise exception 'NAME'; end if;
+  if coalesce(p_email, '') !~ '^[^\s@]+@[^\s@]+\.[^\s@]{2,}$' then raise exception 'EMAIL'; end if;
+  if coalesce(p_phone, '') !~ '^9[0-9]{9}$' then raise exception 'PHONE'; end if;
+  if p_method not in ('gcash','card','qrph') then raise exception 'METHOD'; end if;
+
+  select * into s from public.sessions where id = p_session for update;
+  if not found or s.status <> 'open' or s.date < current_date then raise exception 'CLOSED'; end if;
+  if s.format = 'home' and char_length(v_addr) < 8 then raise exception 'ADDRESS'; end if;
+  if s.format <> 'home' then v_addr := ''; v_pref := ''; end if;
+  v_what := case s.format when 'home' then '1-on-1 coaching booked on website' when 'f2f' then 'Face-to-face seat reserved on website' else 'Seat reserved on website' end;
+
+  select * into prev from public.reservations r
+   where r.session_id = s.id and lower(r.email) = lower(trim(p_email))
+     and r.status in ('pending','paid','refund_requested')
+   limit 1;
+  if found then
+    if prev.status = 'pending' and prev.phone = p_phone then
+      if coalesce(prev.hold_until, prev.created_at) <= now() and public.seats_taken(s.id) >= s.capacity then raise exception 'FULL'; end if;
+      update public.reservations r
+         set method = p_method, hold_until = v_hold, lang = v_lang, address = v_addr, schedule_pref = v_pref,
+             addon_hub = v_want, addon_amount = coalesce(v_addon_price, 0), amount = s.price + coalesce(v_addon_price, 0),
+             pm_checkout_id = case when r.addon_hub is distinct from v_want then '' else r.pm_checkout_id end,
+             history = r.history || jsonb_build_array(jsonb_build_object('at', now(), 'text',
+               'Came back to finish payment' || case when v_want then ' · with Builder Hub' else '' end))
+       where r.id = prev.id;
+      return prev.id;
+    end if;
+    raise exception 'DUPLICATE';
+  end if;
+
+  if public.seats_taken(s.id) >= s.capacity then raise exception 'FULL'; end if;
+
+  insert into public.reservations (session_id, name, email, phone, method, status, source, amount, addon_hub, addon_amount, lang, hold_until, address, schedule_pref, history)
+  values (s.id, left(trim(p_name), 120), lower(left(trim(p_email), 200)), p_phone, p_method, 'pending',
+          left(coalesce(nullif(trim(p_source), ''), 'Website'), 60), s.price + coalesce(v_addon_price, 0),
+          v_want, coalesce(v_addon_price, 0), v_lang, v_hold, v_addr, v_pref,
+          jsonb_build_array(jsonb_build_object('at', now(), 'text',
+            v_what || case when v_want then ' · with Builder Hub (₱' || v_addon_price || ')' else '' end)))
+  returning id into new_id;
+  return new_id;
+end;
+$$;
+revoke all on function public.reserve_seat_v4(uuid, text, text, text, text, text, text, boolean, text, text) from public;
+grant execute on function public.reserve_seat_v4(uuid, text, text, text, text, text, text, boolean, text, text) to anon, authenticated;

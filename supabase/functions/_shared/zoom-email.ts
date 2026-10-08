@@ -21,6 +21,16 @@ const T: Record<Lang, Record<string, string>> = {
     sign: "See you there,\nThe PROVIDETECH team",
     ps: "P.S. Save this email. It's your way in on the day. Questions? Just hit reply.",
     linkHelp: "Button not working? Copy this link:",
+    fSubject: "You're in, {name} · see you on {short}",
+    fIntro: "Your payment went through and your seat in the {title} is locked in. Here's everything you need for {when}.",
+    fBadge: "Face-to-face", fMap: "Open in Google Maps", fTba: "We'll text you the exact address before the session.",
+    fEarly: "Arrive 15 minutes early and bring a laptop and charger. We start on time, and the first minutes matter most.",
+    hSubject: "Booked: your 1-on-1 coaching, {name}",
+    hEyebrow: "Booking confirmed", hHeadline: "You're booked, {name}.",
+    hIntro: "Your payment went through. We'll call or text you at {phone} within 24 hours to confirm the date and time of your 1-on-1 coaching visit.",
+    lService: "Service", lAddress: "We'll come to", lPref: "Your preferred schedule", lPhone: "We'll contact you at",
+    hNext: "Before the visit, think of the one business problem you most want solved, and have your laptop ready. We'll build the system together, side by side.",
+    hPs: "P.S. Need to change the address or schedule? Just reply to this email.",
   },
   tl: {
     subject: "Pasok ka na, {name} · ang Zoom link mo para sa {short}",
@@ -34,6 +44,16 @@ const T: Record<Lang, Record<string, string>> = {
     sign: "Kita-kits,\nAng PROVIDETECH team",
     ps: "P.S. I-save ang email na ito. Ito ang daan mo papasok sa mismong araw. May tanong? Mag-reply lang.",
     linkHelp: "Hindi gumagana ang button? Kopyahin ang link na ito:",
+    fSubject: "Pasok ka na, {name} · kita-kits sa {short}",
+    fIntro: "Natanggap na namin ang bayad mo at naka-reserve na ang upuan mo sa {title}. Narito ang lahat ng kailangan mo para sa {when}.",
+    fBadge: "Harapan", fMap: "Buksan sa Google Maps", fTba: "Ite-text namin sa iyo ang eksaktong address bago ang session.",
+    fEarly: "Dumating 15 minuto nang maaga at magdala ng laptop at charger. Nagsisimula kami sa oras, at pinakamahalaga ang unang mga minuto.",
+    hSubject: "Naka-book na: ang 1-on-1 coaching mo, {name}",
+    hEyebrow: "Kumpirmado ang booking", hHeadline: "Naka-book ka na, {name}.",
+    hIntro: "Natanggap na namin ang bayad mo. Tatawagan o ite-text ka namin sa {phone} sa loob ng 24 oras para kumpirmahin ang petsa at oras ng 1-on-1 coaching visit mo.",
+    lService: "Serbisyo", lAddress: "Pupuntahan namin", lPref: "Gusto mong schedule", lPhone: "Kokontakin ka namin sa",
+    hNext: "Bago ang visit, isipin ang isang problema sa negosyo na pinakagusto mong maayos, at ihanda ang laptop mo. Sabay nating bubuuin ang system.",
+    hPs: "P.S. Kailangang palitan ang address o schedule? Mag-reply lang sa email na ito.",
   },
   ceb: {
     subject: "Sulod na ka, {name} · ang imong Zoom link para sa {short}",
@@ -47,6 +67,16 @@ const T: Record<Lang, Record<string, string>> = {
     sign: "Kita-kits,\nAng PROVIDETECH team",
     ps: "P.S. I-save kini nga email. Mao kini ang imong agianan pagsulod sa mismong adlaw. Naay pangutana? Pag-reply lang.",
     linkHelp: "Dili mugana ang button? Kopyaha kini nga link:",
+    fSubject: "Sulod na ka, {name} · kita-kits sa {short}",
+    fIntro: "Nadawat na namo ang imong bayad ug naka-reserve na ang imong lingkoranan sa {title}. Ania ang tanan nimong kinahanglan para sa {when}.",
+    fBadge: "Atubangan", fMap: "Ablihi sa Google Maps", fTba: "I-text namo kanimo ang eksaktong address sa dili pa ang session.",
+    fEarly: "Abot 15 ka minuto nga sayo ug pagdala og laptop ug charger. Magsugod mi sa oras, ug pinakaimportante ang unang mga minuto.",
+    hSubject: "Naka-book na: ang imong 1-on-1 coaching, {name}",
+    hEyebrow: "Kumpirmado ang booking", hHeadline: "Naka-book na ka, {name}.",
+    hIntro: "Nadawat na namo ang imong bayad. Tawagan o i-text ka namo sa {phone} sulod sa 24 oras aron kumpirmahon ang petsa ug oras sa imong 1-on-1 coaching visit.",
+    lService: "Serbisyo", lAddress: "Adtoon namo", lPref: "Imong gusto nga schedule", lPhone: "Kontakon ka namo sa",
+    hNext: "Sa dili pa ang visit, hunahunaa ang usa ka problema sa negosyo nga labing gusto nimong maayo, ug andama ang imong laptop. Dungan natong himoon ang system.",
+    hPs: "P.S. Kinahanglan usbon ang address o schedule? Pag-reply lang niini nga email.",
   },
 };
 export function fill(s: string, v: Record<string, string>) { return s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? ""); }
@@ -64,7 +94,91 @@ export const C = { page: "#F2F5F8", card: "#FFFFFF", line: "#E3E9EF", ink: "#0B1
 export const SANS = "-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 export const SERIF = "Georgia,'Times New Roman',Times,serif";
 
+/** Picks the right confirmation email for the session format: online (Zoom), f2f (venue) or home (1-on-1 visit). */
 export function buildEmail(r: any, s: any) {
+  if (s.format === "home") return buildHomeEmail(r, s);
+  return buildSeatEmail(r, s);
+}
+
+function shell(lang: Lang, subject: string, preheader: string, eyebrow: string, headline: string, intro: string, rows: string, middle: string, body: string, ps: string) {
+  return `<!doctype html>
+<html lang="${lang === "en" ? "en" : "fil"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${esc(subject)}</title></head>
+<body style="margin:0;padding:0;background:${C.page};-webkit-text-size-adjust:100%">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preheader)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page}"><tr><td align="center" style="padding:32px 14px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${C.card};border:1px solid ${C.line};border-top:4px solid ${C.blue};border-radius:14px">
+<tr><td style="padding:34px 36px 0">
+  <div style="font:800 15px/1 ${SANS};letter-spacing:.02em;color:${C.ink}">PROVIDETECH<span style="color:${C.blue}">&nbsp;AI</span></div>
+  <div style="margin-top:26px;font:700 11px/1 ${SANS};letter-spacing:.16em;text-transform:uppercase;color:${C.blueInk}">${esc(eyebrow)}</div>
+  <h1 style="margin:12px 0 0;font:400 34px/1.18 ${SERIF};letter-spacing:-.01em;color:${C.ink}">${esc(headline)}</h1>
+  <p style="margin:18px 0 0;font:400 15px/1.7 ${SANS};color:${C.ink2}">${intro}</p>
+</td></tr>
+<tr><td style="padding:22px 36px 0">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.tint};border-radius:10px"><tr><td style="padding:6px 18px">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table></td></tr></table>
+</td></tr>
+${middle}
+<tr><td style="padding:26px 36px 0;font:400 15px/1.7 ${SANS};color:${C.ink2}">${body}</td></tr>
+<tr><td style="padding:22px 36px 30px">
+  <p style="margin:0;padding-top:18px;border-top:1px solid ${C.line};font:italic 400 14px/1.6 ${SERIF};color:${C.ink3}">${esc(ps)}</p>
+</td></tr>
+</table>
+<p style="margin:18px 0 0;font:400 12px/1.6 ${SANS};color:${C.ink3}">PROVIDETECH AI Assistance</p>
+</td></tr></table></body></html>`;
+}
+const rowOf = (label: string, value: string, last = false) =>
+  `<tr><td style="padding:10px 0;${last ? "" : `border-bottom:1px solid ${C.line};`}font:500 13px/1.4 ${SANS};color:${C.ink3};width:120px;vertical-align:top">${esc(label)}</td>` +
+  `<td style="padding:10px 0;${last ? "" : `border-bottom:1px solid ${C.line};`}font:600 14px/1.5 ${SANS};color:${C.ink};white-space:pre-line">${value}</td></tr>`;
+const button = (href: string, label: string) =>
+  `<tr><td style="padding:28px 36px 0"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:999px;background:${C.blueInk}">` +
+  `<a href="${esc(href)}" style="display:inline-block;padding:15px 30px;font:700 15px/1 ${SANS};color:#FFFFFF;text-decoration:none;border-radius:999px">${esc(label)}</a></td></tr></table></td></tr>`;
+
+/** 1-on-1 door-to-door coaching: no date yet; we call to schedule. */
+function buildHomeEmail(r: any, s: any) {
+  const lang: Lang = (["en", "tl", "ceb"].includes(r.lang) ? r.lang : "en") as Lang;
+  const t = T[lang];
+  const first = String(r.name || "").trim().split(/\s+/)[0] || "there";
+  const phone = "+63 " + String(r.phone || "").replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3");
+  const v = { name: first, title: s.title, phone };
+  const subject = fill(t.hSubject, v);
+  const intro = esc(fill(t.hIntro, v)).replace(esc(phone), `<strong style="color:${C.ink}">${esc(phone)}</strong>`);
+  const pref = String(r.schedule_pref || "").trim();
+  const rows = rowOf(t.lService, esc(s.title)) + rowOf(t.lAddress, esc(r.address || "")) + (pref ? rowOf(t.lPref, esc(pref)) : "") + rowOf(t.lPhone, esc(phone), true);
+  const body = `<p style="margin:0 0 22px">${esc(t.hNext)}</p><p style="margin:0;white-space:pre-line;color:${C.ink}">${esc(t.sign)}</p>`;
+  const html = shell(lang, subject, fill(t.hIntro, v), t.hEyebrow, fill(t.hHeadline, v), intro, rows, "", body, t.hPs);
+  const text = [fill(t.hHeadline, v), "", fill(t.hIntro, v), "", `${t.lService}: ${s.title}`, `${t.lAddress}: ${r.address || ""}`, ...(pref ? [`${t.lPref}: ${pref}`] : []), `${t.lPhone}: ${phone}`, "", t.hNext, "", t.sign, "", t.hPs].join("\n");
+  return { subject, html, text };
+}
+
+function buildSeatEmail(r: any, s: any) {
+  if (s.format === "f2f") return buildVenueEmail(r, s);
+  return buildZoomEmail(r, s);
+}
+
+/** Face-to-face workshop at a venue. */
+function buildVenueEmail(r: any, s: any) {
+  const lang: Lang = (["en", "tl", "ceb"].includes(r.lang) ? r.lang : "en") as Lang;
+  const t = T[lang];
+  const first = String(r.name || "").trim().split(/\s+/)[0] || "there";
+  const date = formatDate(s.date, lang);
+  const when = date + (s.time_label ? " · " + s.time_label : "");
+  const v = { name: first, title: s.title, code: s.code, when, short: formatDate(s.date, lang, true) };
+  const subject = fill(t.fSubject, v);
+  const venue = String(s.venue || "").trim();
+  const notes = String(s.zoom_notes || "").trim();
+  const intro = esc(fill(t.fIntro, v))
+    .replace(esc(s.title), `<strong style="color:${C.ink}">${esc(s.title)}</strong>`)
+    .replace(esc(when), `<strong style="color:${C.ink}">${esc(when)}</strong>`);
+  const rows = rowOf(t.lWhen, esc(when)) + rowOf(t.lBatch, esc(s.code)) + rowOf(t.lWhere, esc(venue || t.fTba), !notes) + (notes ? rowOf(t.lDetails, esc(notes), true) : "");
+  const map = venue ? button("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(venue), t.fMap) : "";
+  const body = `<p style="margin:0 0 22px">${esc(t.fEarly)}</p><p style="margin:0;white-space:pre-line;color:${C.ink}">${esc(t.sign)}</p>`;
+  const html = shell(lang, subject, when, t.eyebrow + " · " + t.fBadge, fill(t.headline, v), intro, rows, map, body, t.ps);
+  const text = [fill(t.headline, v), "", fill(t.fIntro, v), "", `${t.lWhen}: ${when}`, `${t.lBatch}: ${s.code}`, `${t.lWhere}: ${venue || t.fTba}`, ...(notes ? [`${t.lDetails}:`, notes] : []), "", t.fEarly, "", t.sign, "", t.ps].join("\n");
+  return { subject, html, text };
+}
+
+/** Online workshop: the Zoom link email. */
+function buildZoomEmail(r: any, s: any) {
   const lang: Lang = (["en", "tl", "ceb"].includes(r.lang) ? r.lang : "en") as Lang;
   const t = T[lang];
   const first = String(r.name || "").trim().split(/\s+/)[0] || "there";
@@ -224,7 +338,7 @@ export async function deliver(m: Mail): Promise<{ ok: true; id: string | null } 
 /** Sends the Zoom email for a paid reservation and records it in its history. */
 export async function sendZoomEmail(db: any, r: any, s: any): Promise<SendResult> {
   if (r.status !== "paid") return { ok: false, error: "NOT_PAID", message: "The Zoom link is only sent to paid participants.", status: 409 };
-  if (!/^https:\/\/\S+$/.test(String(s.zoom_link || ""))) {
+  if ((s.format || "online") === "online" && !/^https:\/\/\S+$/.test(String(s.zoom_link || ""))) {
     return { ok: false, error: "NO_ZOOM_LINK", message: `Add the Zoom link to ${s.code} in Workshops first.`, status: 422 };
   }
   const mail = buildEmail(r, s);
@@ -237,6 +351,7 @@ export async function sendZoomEmail(db: any, r: any, s: any): Promise<SendResult
     return sent;
   }
   const sentAt = new Date().toISOString();
-  await db.from("reservations").update({ zoom_email_sent_at: sentAt, history: history.concat([{ at: sentAt, text: `Zoom link emailed to ${r.email}` }]) }).eq("id", r.id);
+  const what = s.format === "home" ? "1-on-1 booking confirmation" : s.format === "f2f" ? "Face-to-face seat confirmation" : "Zoom link";
+  await db.from("reservations").update({ zoom_email_sent_at: sentAt, history: history.concat([{ at: sentAt, text: `${what} emailed to ${r.email}` }]) }).eq("id", r.id);
   return { ok: true, sent_at: sentAt, email_id: sent.id };
 }
