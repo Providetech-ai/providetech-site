@@ -23,6 +23,7 @@
     org_name: "PROVIDETECH AI ASSISTANCE",
     payment_links: { all: "https://pm.link/ProvideTech/k1aTE93", gcash: "", card: "", qrph: "" },   // PayMongo payment link (₱999)
     hold_hours: 1,
+    checkout: { open: true, message: "" },   // Admin → Settings → Checkout: close to stop new reservations
     hub_offer: { enabled: true, price: 1999, compare_at: 11997, months: 12 },
     refund_days: 7,
     bonuses: [
@@ -31,7 +32,7 @@
       "[Bonus 3 — e.g. community access]"
     ]
   };
-  var PUBLIC_SETTING_KEYS = ["payment_links", "bonuses", "hold_hours", "refund_days", "hub_offer"];
+  var PUBLIC_SETTING_KEYS = ["payment_links", "bonuses", "hold_hours", "refund_days", "hub_offer", "checkout"];
   var ACTIVE = { pending: 1, paid: 1, refund_requested: 1 };
 
   /* ---------- small helpers ---------- */
@@ -190,6 +191,7 @@
     reserveSeat: function (r) {
       try { validReservation(r); } catch (e) { return rejectLater(e); }
       var d = load();
+      if (d.settings.checkout && d.settings.checkout.open === false) return rejectLater(fail("CHECKOUT_CLOSED", "Reservations are closed right now."));
       var s = d.sessions.filter(function (x) { return x.id === r.session_id; })[0];
       if (!s || s.status !== "open") return rejectLater(fail("CLOSED", "This session is no longer open for reservations."));
       var prev = d.reservations.filter(function (x) { return x.session_id === s.id && ACTIVE[x.status] && String(x.email).toLowerCase() === cleanText(r.email, 200).toLowerCase(); })[0];
@@ -391,6 +393,7 @@
         var m = res.error.message || "Something went wrong.";
         if (/FULL/.test(m)) throw fail("FULL", "This session is full.");
         if (/CLOSED/.test(m)) throw fail("CLOSED", "This session is no longer open for reservations.");
+        if (/CHECKOUT_CLOSED/.test(m)) throw fail("CHECKOUT_CLOSED", "Reservations are closed right now.");
         if (/ADDRESS/.test(m)) throw fail("ADDRESS", "Please enter the full address where we'll visit you.");
         if (/EMPTY/.test(m)) throw fail("EMPTY", "Choose at least one item.");
         if (/DUPLICATE|reservations_one_active_per_email/.test(m)) throw fail("DUPLICATE", "This email already has a seat in this session.");

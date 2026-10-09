@@ -1235,7 +1235,7 @@ tl:{
 "ws.lede":"Tinuturuan ng aming hands-on na AI Business Systems Workshops ang mga negosyante, propesyonal, at organisasyon kung paano gawing praktikal na digital tool ang kanilang mga ideya gamit ang makabagong AI development platform.",
 "ws.label":"Matututong gumawa ang mga kalahok ng:",
 "ws.o1":"Mga inventory system","ws.o2":"Mga CRM system","ws.o3":"Mga booking platform","ws.o4":"Mga business dashboard","ws.o5":"Mga tool sa pamamahala ng empleyado","ws.o6":"Mga customer portal",
-"ws.cta":"Tingnan ang mga AI Workshop","ws.reserve":"Mag-reserve ng Upuan","ws.more":"Mas gusto mong matuto nang harapan?","ws.f2f":"Face-to-Face Workshop","ws.home":"1-on-1 Door-to-Door Coaching","ws.meta1":"May kasamang bonus","ws.meta2":"7-day guarantee",
+"ws.cta":"Tingnan ang mga AI Workshop","ws.reserve":"Mag-reserve ng Upuan","ws.closed":"Sarado muna ang reservations · Mag-message sa amin","ws.more":"Mas gusto mong matuto nang harapan?","ws.f2f":"Face-to-Face Workshop","ws.home":"1-on-1 Door-to-Door Coaching","ws.meta1":"May kasamang bonus","ws.meta2":"7-day guarantee",
 "why.eyebrow":"Bakit PROVIDETECH","why.h2":"Teknolohiyang Nagsisimula sa Problema ng Negosyo",
 "why.1t":"Negosyo Muna","why.1p":"Inuunawa muna namin ang tunay na problema bago ang teknolohiya.",
 "why.2t":"Mabilis na Prototyping","why.2p":"Lubhang pinabibilis ng AI-assisted development ang pagbuo mula ideya hanggang sistema.",
@@ -1301,7 +1301,7 @@ ceb:{
 "ws.lede":"Ang among hands-on nga AI Business Systems Workshops nagtudlo sa mga negosyante, propesyonal, ug organisasyon kung unsaon paghimo sa ilang mga ideya nga praktikal nga digital tool gamit ang modernong AI development platform.",
 "ws.label":"Makakat-on ang mga partisipante sa paghimo og:",
 "ws.o1":"Mga inventory system","ws.o2":"Mga CRM system","ws.o3":"Mga booking platform","ws.o4":"Mga business dashboard","ws.o5":"Mga tool sa pagdumala sa empleyado","ws.o6":"Mga customer portal",
-"ws.cta":"Tan-awa ang mga AI Workshop","ws.reserve":"Pag-reserve og Lingkoranan","ws.more":"Mas gusto nimo nga magkat-on nga atubangan?","ws.f2f":"Face-to-Face Workshop","ws.home":"1-on-1 Door-to-Door Coaching","ws.meta1":"Apil ang mga bonus","ws.meta2":"7-day guarantee",
+"ws.cta":"Tan-awa ang mga AI Workshop","ws.reserve":"Pag-reserve og Lingkoranan","ws.closed":"Sirado sa karon ang reservations · Pag-message kanamo","ws.more":"Mas gusto nimo nga magkat-on nga atubangan?","ws.f2f":"Face-to-Face Workshop","ws.home":"1-on-1 Door-to-Door Coaching","ws.meta1":"Apil ang mga bonus","ws.meta2":"7-day guarantee",
 "why.eyebrow":"Nganong PROVIDETECH","why.h2":"Teknolohiya nga Nagsugod sa Problema sa Negosyo",
 "why.1t":"Negosyo Una","why.1p":"Una namong sabton ang tinuod nga problema sa dili pa ang teknolohiya.",
 "why.2t":"Paspas nga Prototyping","why.2p":"Gipaspas pag-ayo sa AI-assisted development ang paghimo gikan sa ideya hangtod sa sistema.",
@@ -1371,6 +1371,23 @@ ceb:{
 </script>
 <script src="/assets/config.js"></script>
 <script src="/assets/data.js"></script>
+<script>
+/* Admin → Settings → Checkout: when closed, the Reserve buttons point to the contact form instead. */
+(function(){
+  if(!window.PT||!PT.publicSettings)return;
+  PT.publicSettings().then(function(st){
+    var c=st&&st.checkout; if(!c||c.open!==false)return;
+    var lang=document.documentElement.getAttribute('lang')||'en', D=(window.PT_I18N||{})[lang]||{};
+    [].forEach.call(document.querySelectorAll('a.btn-reserve'),function(a){
+      a.setAttribute('href','#contact');
+      var lbl=a.querySelector('[data-i18n="ws.reserve"]');
+      if(lbl){lbl.setAttribute('data-i18n','ws.closed');lbl._en='Reservations closed · Message us';lbl.innerHTML=(lang!=='en'&&D['ws.closed'])?D['ws.closed']:lbl._en}
+      var pr=a.querySelector('.rs-price');if(pr)pr.hidden=true;
+    });
+    [].forEach.call(document.querySelectorAll('.reserve-more'),function(el){el.hidden=true});
+  }).catch(function(){});
+})();
+</script>
 
 <!-- ================= Inquiry form (feeds /admin → Inquiries) ================= -->
 <style>

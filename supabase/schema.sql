@@ -917,3 +917,16 @@ revoke execute on function public.public_sessions() from public, anon, authentic
 revoke execute on function public.admin_delete_session(uuid) from public, anon;
 grant execute on function public.admin_delete_session(uuid) to authenticated;
 revoke execute on function public.flag_over_capacity() from public, anon, authenticated;
+
+-- =====================================================================
+-- Admin switch: open / close the checkout (2026-10-09)
+-- =====================================================================
+insert into public.settings (key, value, public)
+values ('checkout', '{"open": true, "message": ""}'::jsonb, true)
+on conflict (key) do nothing;
+create or replace function public.checkout_is_open()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select (value->>'open')::boolean from public.settings where key = 'checkout'), true);
+$$;
+revoke execute on function public.checkout_is_open() from public, anon, authenticated;
+-- reserve_seat_v4 now starts with: if not public.checkout_is_open() then raise exception 'CHECKOUT_CLOSED'; end if;

@@ -312,6 +312,7 @@
     var oldNew = newQ.filter(function (q) { return now - new Date(q.created_at).getTime() > day; });
     if (newQ.length) att.push(['<span class="badge-ic" style="background:var(--blue-50);color:var(--blue-ink)">' + I.chat + "</span>", newQ.length + (newQ.length === 1 ? " new inquiry" : " new inquiries"),
       oldNew.length ? oldNew.length + " waiting more than 24 hours" : "Not contacted yet", "go", "inquiries", "Open"]);
+    if (checkoutSetting().open === false) att.unshift(['<span class="badge-ic" style="background:var(--warn-bg);color:var(--warn)">' + I.cal + "</span>", "Checkout is closed", "Nobody can reserve or pay. Open it again in Settings when you're ready", "go", "settings", "Open"]);
     upcoming().forEach(function (s) {
       if (fmtOf(s) !== "hub" && stats(s).active > s.capacity) att.push(['<span class="badge-ic" style="background:var(--warn-bg);color:var(--warn)">' + I.cal + "</span>", s.code + " is over capacity: " + stats(s).active + " paid for " + s.capacity + " seats", "Two people paid for the last seat at the same time. Raise the seats, move someone, or refund", "go-batch", s.id, "Open"]);
       if (!s.venue && fmtOf(s) !== "home" && fmtOf(s) !== "hub") att.push(['<span class="badge-ic" style="background:var(--bg);color:var(--ink-2)">' + I.cal + "</span>", s.code + " has no venue yet", fmtDate(s.date) + " · " + (s.status === "draft" ? "still a draft" : "open for reservations"), "edit-batch", s.id, "Set"]);
@@ -866,6 +867,21 @@
   }
 
   /* -------------------------------------------------------------- settings */
+  function checkoutSetting() { var c = setting("checkout"); return c && typeof c === "object" ? c : { open: true, message: "" }; }
+  function checkoutCard() {
+    var c = checkoutSetting(), open = c.open !== false;
+    return '<form class="card" data-form="checkout" novalidate style="border-color:' + (open ? "var(--line)" : "var(--warn)") + '"><h2>Checkout (reservations)</h2>' +
+      '<p>Close the checkout to stop new reservations and payments, for example when a batch is full or between batches. The homepage buttons and the checkout page change automatically.</p>' +
+      '<div class="callout ' + (open ? "info" : "warn") + '" style="margin-bottom:14px"><b>' + (open ? "Open" : "Closed") + "</b> · " +
+      (open ? "people can reserve and pay." : "nobody can reserve or pay right now. People who already paid are not affected.") + "</div>" +
+      '<div class="form-grid"><div class="span2">' + field(lbl("co-msg", "Message shown while closed (optional)"),
+        '<textarea class="input" id="co-msg" name="message" rows="2" maxlength="300" placeholder="e.g. Batch 01 is full. Next batch opens on November 1. Message us to get notified.">' + esc(c.message || "") + "</textarea>",
+        "Leave empty to show: “Reservations are closed right now. Message us and we'll tell you when the next batch opens.”") + "</div></div>" +
+      '<div class="save-row">' + (open
+        ? '<button class="btn btn-danger" type="submit" name="to" value="close">Close checkout</button><button class="btn btn-g" type="submit" name="to" value="save">Save message</button>'
+        : '<button class="btn btn-p" type="submit" name="to" value="open">Open checkout</button><button class="btn btn-g" type="submit" name="to" value="save">Save message</button>') +
+      "</div></form>";
+  }
   function hubOfferCard() {
     var o = hubOffer();
     return '<form class="card" data-form="hub" novalidate><h2>Builder Hub offer at checkout</h2><p>The “Add to your order” box on the checkout page. Buyers get a Builder Hub login by email right after paying.</p><div class="form-grid">' +
@@ -896,7 +912,7 @@
   function viewSettings() {
     var l = setting("payment_links") || {}, demo = PT.mode === "demo";
     var cfg = window.PROVIDETECH_CONFIG || {};
-    return '<header class="page-head"><div><h1>Settings</h1><p>Payment links, workshop rules and your data connection.</p></div></header><div class="settings-grid">' +
+    return '<header class="page-head"><div><h1>Settings</h1><p>Payment links, workshop rules and your data connection.</p></div></header><div class="settings-grid">' + checkoutCard() +
       '<form class="card" data-form="payments" novalidate><h2>Payment links</h2><p>Where the checkout page sends people to pay. Paste links from your payment provider (for example PayMongo or Xendit payment links). Leave a method empty to use the general link.</p><div class="form-grid">' +
       '<div class="span2">' + field(lbl("pl-all", "General payment link (all methods)"), '<input class="input" id="pl-all" name="all" type="url" placeholder="https://" value="' + esc(l.all || "") + '">') + "</div>" +
       field(lbl("pl-gcash", "GCash"), '<input class="input" id="pl-gcash" name="gcash" type="url" placeholder="https://" value="' + esc(l.gcash || "") + '">') +
@@ -904,7 +920,7 @@
       '<div class="span2">' + field(lbl("pl-card", "Card"), '<input class="input" id="pl-card" name="card" type="url" placeholder="https://" value="' + esc(l.card || "") + '">') + "</div>" +
       '</div><div class="save-row"><button class="btn btn-p" type="submit">Save payment links</button></div></form>' +
       '<form class="card" data-form="rules" novalidate><h2>Workshop rules</h2><p>Shown to participants at checkout and used for reminders and refund deadlines.</p><div class="form-grid">' +
-      field(lbl("hold", "Hold unpaid seats for (hours)"), '<input class="input" id="hold" name="hold_hours" type="number" min="1" max="336" value="' + esc(setting("hold_hours")) + '">') +
+      field(lbl("hold", "Remind me about unpaid bookings after (hours)"), '<input class="input" id="hold" name="hold_hours" type="number" min="1" max="336" value="' + esc(setting("hold_hours")) + '">') +
       field(lbl("refund", "Money-back guarantee (days)"), '<input class="input" id="refund" name="refund_days" type="number" min="0" max="60" value="' + esc(setting("refund_days")) + '">') +
       '<div class="span2">' + field(lbl("bonuses", "Bonuses included (one per line)"), '<textarea class="input" id="bonuses" name="bonuses" rows="4">' + esc((setting("bonuses") || []).join("\n")) + "</textarea>", "Listed in the checkout order summary.") + "</div>" +
       '</div><div class="save-row"><button class="btn btn-p" type="submit">Save rules</button></div></form>' +
@@ -1130,6 +1146,12 @@
   app.addEventListener("submit", function (e) {
     var f = e.target.closest("form[data-form]"); if (!f) return;
     e.preventDefault();
+    if (f.getAttribute("data-form") === "checkout") {
+      var cur = checkoutSetting(), to = (e.submitter && e.submitter.value) || "save";
+      var next = { open: to === "open" ? true : to === "close" ? false : cur.open !== false, message: String(f.elements.message.value || "").trim().slice(0, 300) };
+      act(PT.admin.saveSettings({ checkout: next }), to === "close" ? "Checkout closed: no new reservations" : to === "open" ? "Checkout open: people can reserve again" : "Message saved");
+      return;
+    }
     if (f.getAttribute("data-form") === "hub") {
       var price = parseInt(f.elements.price.value, 10), cmp = parseInt(f.elements.compare_at.value, 10) || 0, mo = parseInt(f.elements.months.value, 10);
       if (!(price >= 1)) { toast("Enter a price of at least ₱1"); return; }
