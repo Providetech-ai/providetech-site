@@ -910,3 +910,10 @@ create or replace trigger reservations_flag_over_capacity before insert or updat
   for each row execute function public.flag_over_capacity();
 -- reserve_seat_v4: a returning unpaid customer is refused with FULL whenever paid seats fill the batch
 -- (see the live function; same as above version with the hold-expiry condition removed).
+
+-- Lock down old/internal functions (2026-10-09 checkup)
+revoke execute on function public.reserve_seat_v3(uuid, text, text, text, text, text, text, boolean) from public, anon, authenticated;
+revoke execute on function public.public_sessions() from public, anon, authenticated;
+revoke execute on function public.admin_delete_session(uuid) from public, anon;
+grant execute on function public.admin_delete_session(uuid) to authenticated;
+revoke execute on function public.flag_over_capacity() from public, anon, authenticated;
