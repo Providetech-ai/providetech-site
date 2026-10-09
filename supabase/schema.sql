@@ -872,3 +872,41 @@ end;
 $$;
 revoke all on function public.admin_delete_session(uuid) from public;
 grant execute on function public.admin_delete_session(uuid) to authenticated;
+
+-- =====================================================================
+-- Seats are taken only by PAID bookings (2026-10-09)
+-- Unpaid (pending) reservations no longer hold a seat. If two people pay for the
+-- last seat at the same time, the later payment is flagged [OVER CAPACITY].
+-- =====================================================================
+create or replace function public.seats_taken(p_session uuid)
+returns integer language sql stable security definer set search_path = public as $$
+  select count(*)::int from public.reservations r
+   where r.session_id = p_session
+     and r.status in ('paid','refund_requested');
+$$;
+
+create or replace function public.flag_over_capacity()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  s public.sessions%rowtype;
+  v_paid int;
+begin
+  if new.status = 'paid' and (tg_op = 'INSERT' or old.status is distinct from 'paid') then
+    select * into s from public.sessions where id = new.session_id;
+    if found and s.format in ('online','f2f','home') then
+      select count(*) into v_paid from public.reservations
+       where session_id = new.session_id and status in ('paid','refund_requested') and id <> new.id;
+      if v_paid >= s.capacity then
+        new.history := coalesce(new.history, '[]'::jsonb) || jsonb_build_array(jsonb_build_object('at', now(), 'text',
+          'Over capacity: ' || s.code || ' already had ' || v_paid || ' of ' || s.capacity || ' seats paid when this payment came in. Move them to another batch, raise the seats, or refund.'));
+        new.notes := trim(both ' ' from coalesce(new.notes, '') || ' [OVER CAPACITY]');
+      end if;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+create or replace trigger reservations_flag_over_capacity before insert or update of status on public.reservations
+  for each row execute function public.flag_over_capacity();
+-- reserve_seat_v4: a returning unpaid customer is refused with FULL whenever paid seats fill the batch
+-- (see the live function; same as above version with the hold-expiry condition removed).

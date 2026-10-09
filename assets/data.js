@@ -159,8 +159,7 @@
     var holdMs = (Number(d.settings && d.settings.hold_hours) || 1) * 3600000, now = Date.now();
     return d.reservations.filter(function (r) {
       if (r.session_id !== sessionId) return false;
-      if (r.status === "paid" || r.status === "refund_requested") return true;
-      return r.status === "pending" && (r.hold_until ? new Date(r.hold_until).getTime() : new Date(r.created_at).getTime() + holdMs) > now;
+      return r.status === "paid" || r.status === "refund_requested"; // only paid seats are taken
     }).length;
   }
 

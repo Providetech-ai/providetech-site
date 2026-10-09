@@ -95,7 +95,7 @@
       if (r.status === "paid") o.paid++;
       if (r.status === "pending") { o.pending++; if (holdActive(r)) o.held++; }
       if (r.status === "refund_requested") o.refund++;
-      if (r.status === "paid" || r.status === "refund_requested" || holdActive(r)) o.active++;
+      if (r.status === "paid" || r.status === "refund_requested") o.active++; // only paid seats are taken
       if (r.status === "paid" || r.status === "refund_requested") o.collected += wsAmt(r);
     });
     o.left = Math.max(0, s.capacity - o.active);
@@ -308,11 +308,12 @@
     }
     var expired = d.reservations.filter(holdExpired), pend = d.reservations.filter(function (r) { return r.status === "pending"; });
     if (pend.length) att.push(['<span class="badge-ic" style="background:var(--blue-50);color:var(--blue-ink)">' + I.clock + "</span>", pend.length + (pend.length === 1 ? " payment pending" : " payments pending"),
-      expired.length ? expired.length + " past the seat hold (their seats were released)" : "Waiting for GCash, credit card or QR Ph payment", "go-tab", "pending", "Remind"]);
+      expired.length ? expired.length + " started over an hour ago and still unpaid (unpaid bookings don't hold a seat)" : "Unpaid bookings don't hold a seat until they pay", "go-tab", "pending", "Remind"]);
     var oldNew = newQ.filter(function (q) { return now - new Date(q.created_at).getTime() > day; });
     if (newQ.length) att.push(['<span class="badge-ic" style="background:var(--blue-50);color:var(--blue-ink)">' + I.chat + "</span>", newQ.length + (newQ.length === 1 ? " new inquiry" : " new inquiries"),
       oldNew.length ? oldNew.length + " waiting more than 24 hours" : "Not contacted yet", "go", "inquiries", "Open"]);
     upcoming().forEach(function (s) {
+      if (fmtOf(s) !== "hub" && stats(s).active > s.capacity) att.push(['<span class="badge-ic" style="background:var(--warn-bg);color:var(--warn)">' + I.cal + "</span>", s.code + " is over capacity: " + stats(s).active + " paid for " + s.capacity + " seats", "Two people paid for the last seat at the same time. Raise the seats, move someone, or refund", "go-batch", s.id, "Open"]);
       if (!s.venue && fmtOf(s) !== "home" && fmtOf(s) !== "hub") att.push(['<span class="badge-ic" style="background:var(--bg);color:var(--ink-2)">' + I.cal + "</span>", s.code + " has no venue yet", fmtDate(s.date) + " · " + (s.status === "draft" ? "still a draft" : "open for reservations"), "edit-batch", s.id, "Set"]);
       if (fmtOf(s) === "hub") return;
       if (fmtOf(s) !== "online") { var cp = zoomPending(s).length; if (cp) att.push(['<span class="badge-ic" style="background:var(--warn-bg);color:var(--warn)">' + I.cal + "</span>", cp + (cp === 1 ? " paid booking hasn't" : " paid bookings haven't") + " got the confirmation email", s.code + " · open Participants to send it", "go-batch", s.id, "Open"]); }
@@ -401,7 +402,7 @@
       '<div class="meta">' + esc(fmtLong(s.date)) + (s.time_label ? "<br>" + esc(s.time_label) : "") + "<br>" + (s.venue ? esc(s.venue) : fm === "hub" ? "Bought on its own at checkout" : fm === "home" ? "At the client's address" : '<span class="warnTxt">No venue yet</span>') +
       (fm !== "online" ? "" : s.zoom_link ? "<br>Zoom link added" : daysUntil(s.date) >= 0 && s.status !== "done" ? '<br><span class="warnTxt">No Zoom link yet</span>' : "") + "</div>" +
       '<div style="display:grid;gap:8px"><div class="batch-stats"><span><b class="num">' + (st.paid + st.refund) + " of " + s.capacity + '</b> ' + (fm === "home" ? "booked" : "paid") + '</span><span class="muted num">' + peso(s.price) + (fm === "hub" ? " + add-on price" : fm === "home" ? " per booking" : " per seat") + "</span></div>" +
-      '<div class="seatbar" aria-hidden="true"><span style="width:' + pct(st.paid) + ';background:var(--blue)"></span><span style="width:' + pct(st.held) + ';background:var(--blue-300)"></span><span style="width:' + pct(st.refund) + ';background:var(--warn-bar)"></span></div>' +
+      '<div class="seatbar" aria-hidden="true"><span style="width:' + pct(st.paid) + ';background:var(--blue)"></span><span style="width:' + pct(st.refund) + ';background:var(--warn-bar)"></span></div>' +
       '<div class="batch-stats"><span class="muted num">' + st.pending + " waiting for payment · " + st.refund + " refunds</span><b class=\"num\">" + peso(st.collected) + "</b></div></div>" +
       '<div class="batch-actions"><a class="btn btn-g btn-sm" href="#/participants" data-act="go-batch" data-id="' + esc(s.id) + '">Participants</a>' +
       '<button class="btn btn-g btn-sm" data-act="edit-batch" data-id="' + esc(s.id) + '">Edit</button>' +
@@ -533,7 +534,7 @@
 
     var summary = '<section class="card" aria-label="Batch summary" style="display:flex;flex-wrap:wrap;align-items:center;gap:18px 36px;padding:18px 22px">' +
       '<div style="display:grid;gap:8px;flex:1 1 260px;min-width:0"><div class="batch-stats"><span><b class="num">' + (st.paid + st.refund) + " of " + s.capacity + "</b> seats paid</span>" + (st.left ? '<span class="' + (st.left / s.capacity <= .25 ? "warnTxt" : "muted") + '">' + st.left + " left</span>" : '<span class="warnTxt">Full</span>') + "</div>" +
-      '<div class="seatbar" style="height:8px" aria-hidden="true"><span style="width:' + pct(st.paid) + ';background:var(--blue)"></span><span style="width:' + pct(st.held) + ';background:var(--blue-300)"></span><span style="width:' + pct(st.refund) + ';background:var(--warn-bar)"></span></div></div>' +
+      '<div class="seatbar" style="height:8px" aria-hidden="true"><span style="width:' + pct(st.paid) + ';background:var(--blue)"></span><span style="width:' + pct(st.refund) + ';background:var(--warn-bar)"></span></div></div>' +
       [["Paid", st.paid], ["Waiting for payment", st.pending], ["Refund requests", st.refund], ["Collected", peso(st.collected)]].map(function (x) {
         return '<div style="display:flex;flex-direction:column"><span class="muted" style="font-size:12.5px">' + x[0] + '</span><b class="num" style="font-family:var(--display);font-size:22px;letter-spacing:-.02em">' + x[1] + "</b></div>";
       }).join("") + "</section>";
