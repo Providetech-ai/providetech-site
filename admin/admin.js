@@ -882,6 +882,14 @@
         : '<button class="btn btn-p" type="submit" name="to" value="open">Open checkout</button><button class="btn btn-g" type="submit" name="to" value="save">Save message</button>') +
       "</div></form>";
   }
+  function remindersCard() {
+    var r = setting("reminders") || {}, on = r.enabled !== false, mins = Number(r.minutes) || 15;
+    return '<form class="card" data-form="reminders" novalidate><h2>Reminder emails</h2>' +
+      '<p>Before an <b>online</b> session starts, every paid participant gets a short “Starting in ' + esc(mins) + ' minutes, where are you?” email with the Zoom button, in their language. Each person gets it once, and it shows in their history.</p><div class="form-grid">' +
+      '<label class="span2" style="display:flex;gap:10px;align-items:center;font-weight:600"><input type="checkbox" name="enabled"' + (on ? " checked" : "") + ' style="width:18px;height:18px;accent-color:var(--btn)"> Send reminder emails</label>' +
+      field(lbl("rm-min", "Minutes before the start"), '<input class="input" id="rm-min" name="minutes" type="number" min="5" max="180" step="5" value="' + esc(mins) + '">', "The start time is read from the batch's Time, e.g. “7:00 PM – 9:00 PM”.") +
+      '</div><div class="save-row"><button class="btn btn-p" type="submit">Save reminders</button></div></form>';
+  }
   function hubOfferCard() {
     var o = hubOffer();
     return '<form class="card" data-form="hub" novalidate><h2>Builder Hub offer at checkout</h2><p>The “Add to your order” box on the checkout page. Buyers get a Builder Hub login by email right after paying.</p><div class="form-grid">' +
@@ -924,6 +932,7 @@
       field(lbl("refund", "Money-back guarantee (days)"), '<input class="input" id="refund" name="refund_days" type="number" min="0" max="60" value="' + esc(setting("refund_days")) + '">') +
       '<div class="span2">' + field(lbl("bonuses", "Bonuses included (one per line)"), '<textarea class="input" id="bonuses" name="bonuses" rows="4">' + esc((setting("bonuses") || []).join("\n")) + "</textarea>", "Listed in the checkout order summary.") + "</div>" +
       '</div><div class="save-row"><button class="btn btn-p" type="submit">Save rules</button></div></form>' +
+      remindersCard() +
       hubOfferCard() +
       pmCard(demo) +
       '<section class="card"><h2>Zoom link emails</h2><p>When you mark someone as paid (or add a paid walk-in), the Zoom link of their batch is emailed to them in the language they used at checkout. Add the link in <a href="#/workshops">Workshops → Edit</a>.</p>' +
@@ -1150,6 +1159,12 @@
       var cur = checkoutSetting(), to = (e.submitter && e.submitter.value) || "save";
       var next = { open: to === "open" ? true : to === "close" ? false : cur.open !== false, message: String(f.elements.message.value || "").trim().slice(0, 300) };
       act(PT.admin.saveSettings({ checkout: next }), to === "close" ? "Checkout closed: no new reservations" : to === "open" ? "Checkout open: people can reserve again" : "Message saved");
+      return;
+    }
+    if (f.getAttribute("data-form") === "reminders") {
+      var rmin = parseInt(f.elements.minutes.value, 10);
+      if (!(rmin >= 5 && rmin <= 180)) { toast("Choose between 5 and 180 minutes"); return; }
+      act(PT.admin.saveSettings({ reminders: { enabled: f.elements.enabled.checked, minutes: rmin } }), f.elements.enabled.checked ? "Reminders on: " + rmin + " minutes before online sessions" : "Reminder emails turned off");
       return;
     }
     if (f.getAttribute("data-form") === "hub") {

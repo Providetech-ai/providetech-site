@@ -23,7 +23,8 @@
     org_name: "PROVIDETECH AI ASSISTANCE",
     payment_links: { all: "https://pm.link/ProvideTech/k1aTE93", gcash: "", card: "", qrph: "" },   // PayMongo payment link (₱999)
     hold_hours: 1,
-    checkout: { open: true, message: "" },   // Admin → Settings → Checkout: close to stop new reservations
+    checkout: { open: true, message: "" },
+    reminders: { enabled: true, minutes: 15 },   // "Starting soon" emails before online sessions (sent by Supabase)   // Admin → Settings → Checkout: close to stop new reservations
     hub_offer: { enabled: true, price: 1999, compare_at: 11997, months: 12 },
     refund_days: 7,
     bonuses: [

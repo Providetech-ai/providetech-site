@@ -930,3 +930,31 @@ returns boolean language sql stable security definer set search_path = public as
 $$;
 revoke execute on function public.checkout_is_open() from public, anon, authenticated;
 -- reserve_seat_v4 now starts with: if not public.checkout_is_open() then raise exception 'CHECKOUT_CLOSED'; end if;
+
+-- =====================================================================
+-- "Starting in 15 minutes" reminder emails (2026-10-09)
+-- Every 2 minutes pg_cron calls the session-reminders Edge Function (deploy it with
+-- JWT verification OFF); it checks a secret header that only the database knows.
+-- =====================================================================
+create extension if not exists pg_net;
+create extension if not exists pg_cron;
+alter table public.reservations add column if not exists reminder_sent_at timestamptz;
+insert into public.settings (key, value, public)
+values ('reminders', '{"enabled": true, "minutes": 15}'::jsonb, false)
+on conflict (key) do nothing;
+insert into public.private_config (key, value)
+values ('cron_secret', replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''))
+on conflict (key) do nothing;
+create or replace function public.run_session_reminders()
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  perform net.http_post(
+    url := 'https://bfojtvszuvhajmwfkapk.supabase.co/functions/v1/session-reminders',  -- your project URL
+    body := '{}'::jsonb,
+    headers := jsonb_build_object('Content-Type', 'application/json',
+                                  'x-cron-secret', (select value from public.private_config where key = 'cron_secret')),
+    timeout_milliseconds := 30000);
+end;
+$$;
+revoke execute on function public.run_session_reminders() from public, anon, authenticated;
+select cron.schedule('providetech-session-reminders', '*/2 * * * *', 'select public.run_session_reminders();');
