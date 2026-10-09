@@ -521,7 +521,29 @@ section{scroll-margin-top:84px}
 @media (max-width:900px){.pf-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pf-video{grid-row:auto;aspect-ratio:16/9}}
 @media (prefers-reduced-motion:reduce){.pf-tile img{transition:none}}
 </style>
-<style>.reserve-more{margin:10px 0 0;font-size:.9rem;color:var(--ink-3);line-height:1.7}.reserve-more a{color:var(--blue-ink);font-weight:600;text-decoration:underline;text-underline-offset:3px}</style>
+<style>
+/* live sample projects */
+.samples{margin-top:clamp(56px,7vw,88px);display:grid;gap:12px}
+.samples-h{font-family:var(--display);font-size:clamp(1.3rem,2.2vw,1.7rem);letter-spacing:-.02em;margin:0}
+.samples-sub{margin:0 0 10px;color:var(--ink-2);max-width:62ch}
+.sp-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg,18px);padding:clamp(20px,3vw,28px);display:grid;gap:16px;max-width:620px;box-shadow:var(--shadow-sm)}
+.sp-top{display:flex;gap:14px;align-items:center}
+.sp-icon{width:46px;height:46px;border-radius:12px;background:#F26B2A;color:#fff;display:grid;place-items:center;flex-shrink:0}
+.sp-kicker{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--blue-ink)}
+.sp-title{margin:4px 0 0;font-size:1.2rem;font-weight:700}
+.sp-desc{margin:0;color:var(--ink-2);line-height:1.6}
+.sp-tags{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.sp-tags li{font-size:.8rem;font-weight:600;padding:5px 10px;border-radius:999px;background:var(--blue-50);color:var(--blue-ink)}
+.sp-cred{border:1px dashed var(--line-strong);border-radius:12px;padding:12px 14px;display:grid;gap:8px;background:var(--bg)}
+.sp-cred-h{font-size:.78rem;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em}
+.sp-row{display:grid;grid-template-columns:80px minmax(0,1fr) auto;gap:10px;align-items:center}
+.sp-k{font-size:.85rem;color:var(--ink-3)}
+.sp-row code{font-family:var(--mono);font-size:.88rem;color:var(--ink);overflow-wrap:anywhere}
+.sp-copy{font:inherit;font-size:.78rem;font-weight:600;color:var(--blue-ink);background:none;border:1px solid var(--line-strong);border-radius:8px;padding:5px 10px;cursor:pointer;min-height:32px}
+.sp-copy:hover{background:var(--blue-50)}
+.sp-open{justify-self:start}
+@media (max-width:640px){.sp-open{justify-self:stretch}.sp-row{grid-template-columns:70px minmax(0,1fr) auto}}
+.reserve-more{margin:10px 0 0;font-size:.9rem;color:var(--ink-3);line-height:1.7}.reserve-more a{color:var(--blue-ink);font-weight:600;text-decoration:underline;text-underline-offset:3px}</style>
 </head>
 <body>
 <header class="nav" id="top">
@@ -884,8 +906,31 @@ section{scroll-margin-top:84px}
           <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8.3 3 3 7-7"/></svg><span data-i18n="demo.f5">Analytics Dashboard</span></li>
           <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8.3 3 3 7-7"/></svg><span data-i18n="demo.f6">AI Business Assistant</span></li>
         </ul>
-        <a href="#projects" class="link-arrow"><span data-i18n="demo.view">View Our Projects</span> <span class="arr" aria-hidden="true">→</span></a>
+        <a href="#live-samples" class="link-arrow"><span data-i18n="demo.view">View Our Projects</span> <span class="arr" aria-hidden="true">→</span></a>
       </div>
+    </div>
+
+    <!-- LIVE SAMPLE PROJECTS: real systems visitors can open and try -->
+    <div class="samples" id="live-samples">
+      <h3 class="samples-h"><span data-i18n="sp.h">Try a live sample project</span></h3>
+      <p class="samples-sub"><span data-i18n="sp.sub">Real systems we built with AI. Log in with the demo account and click around. It's sample data, so you can't break anything.</span></p>
+      <article class="sp-card" data-reveal>
+        <div class="sp-top">
+          <span class="sp-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1.5 3 4.5 4.5 4.5 8.5a4.5 4.5 0 0 1-9 0c0-2 1-3.2 2-4.2.3 1.4 1.1 2.2 2 2.4C11 8 11.5 5.5 12 3Z"/><path d="M7 21h10"/></svg></span>
+          <div>
+            <span class="sp-kicker"><span data-i18n="sp.kicker">Inventory system · Food business</span></span>
+            <h4 class="sp-title">JC Sisig · Business Hub</h4>
+          </div>
+        </div>
+        <p class="sp-desc"><span data-i18n="sp.desc">One place for a food business to track stock, daily sales, production and expenses. Built with AI and running online.</span></p>
+        <ul class="sp-tags"><li data-i18n="sp.t1">Inventory</li><li data-i18n="sp.t2">Sales</li><li data-i18n="sp.t3">Production</li><li data-i18n="sp.t4">Expenses</li></ul>
+        <div class="sp-cred" role="group" aria-label="Demo login">
+          <span class="sp-cred-h"><span data-i18n="sp.login">Demo login</span></span>
+          <div class="sp-row"><span class="sp-k" data-i18n="sp.user">Username</span><code id="spUser">Josh</code><button type="button" class="sp-copy" data-copy="spUser" data-i18n="sp.copy">Copy</button></div>
+          <div class="sp-row"><span class="sp-k" data-i18n="sp.pass">Password</span><code id="spPass">https://jc-sisig.vercel.app/</code><button type="button" class="sp-copy" data-copy="spPass" data-i18n="sp.copy">Copy</button></div>
+        </div>
+        <a class="btn btn-primary sp-open" href="https://jc-sisig.vercel.app/" target="_blank" rel="noopener"><span data-i18n="sp.open">Open the live demo</span> <span class="arr" aria-hidden="true">↗</span></a>
+      </article>
     </div>
   </div>
 </section>
@@ -1222,7 +1267,7 @@ tl:{
 "demo.eyebrow":"Ginawa ng PROVIDETECH","demo.h2":"Mula sa Ideya Hanggang sa Gumaganang Sistema","demo.ex":"Halimbawang sistema",
 "demo.quote":"Hindi lang kami nagsasalita tungkol sa AI. Ginagamit namin ito para bumuo ng mga sistemang talagang magagamit ng negosyo.",
 "demo.f1":"Pamamahala ng Customer","demo.f2":"Pagsubaybay ng Benta","demo.f3":"Imbentaryo","demo.f4":"Awtomatikong Report","demo.f5":"Analytics Dashboard","demo.f6":"AI Business Assistant",
-"demo.view":"Tingnan ang Aming mga Proyekto",
+"demo.view":"Tingnan ang Aming mga Proyekto","sp.h":"Subukan ang isang live na sample project","sp.sub":"Mga totoong system na ginawa namin gamit ang AI. Mag-log in gamit ang demo account at mag-explore. Sample data lang ito, kaya wala kang masisira.","sp.kicker":"Inventory system · Food business","sp.desc":"Isang lugar para sa food business para i-track ang stock, araw-araw na benta, production at gastos. Ginawa gamit ang AI at gumagana online.","sp.t1":"Imbentaryo","sp.t2":"Benta","sp.t3":"Production","sp.t4":"Gastos","sp.login":"Demo login","sp.user":"Username","sp.pass":"Password","sp.copy":"Kopyahin","sp.open":"Buksan ang live demo",
 "how.h2":"Praktikal na Paraan sa AI Transformation",
 "how.lede":"Limang yugto ang magdadala sa inyo mula sa problema ng negosyo hanggang sa sistemang ginagamit ng inyong team araw-araw. Makikita ninyo ang progreso sa bawat hakbang.",
 "how.1t":"TUKLASIN","how.1p":"Unawain ang problema ng negosyo.","how.1d":"Kinakausap namin ang mga may-ari at ang mga taong mismong gumagawa ng trabaho.",
@@ -1288,7 +1333,7 @@ ceb:{
 "demo.eyebrow":"Gihimo sa PROVIDETECH","demo.h2":"Gikan sa Ideya Hangtod sa Sistema nga Magamit Na","demo.ex":"Pananglitan nga sistema",
 "demo.quote":"Dili lang mi mosulti bahin sa AI. Gigamit namo kini aron maghimo og mga sistema nga magamit gyud sa negosyo.",
 "demo.f1":"Pagdumala sa Customer","demo.f2":"Pagsubay sa Halin","demo.f3":"Imbentaryo","demo.f4":"Awtomatikong Report","demo.f5":"Analytics Dashboard","demo.f6":"AI Business Assistant",
-"demo.view":"Tan-awa ang Among mga Proyekto",
+"demo.view":"Tan-awa ang Among mga Proyekto","sp.h":"Sulayi ang usa ka live nga sample project","sp.sub":"Tinuod nga mga system nga among gihimo gamit ang AI. Pag-log in gamit ang demo account ug suhira. Sample data ra kini, busa wala kay maguba.","sp.kicker":"Inventory system · Food business","sp.desc":"Usa ka lugar para sa food business aron ma-track ang stock, adlaw-adlaw nga baligya, production ug gasto. Gihimo gamit ang AI ug mugana online.","sp.t1":"Imbentaryo","sp.t2":"Baligya","sp.t3":"Production","sp.t4":"Gasto","sp.login":"Demo login","sp.user":"Username","sp.pass":"Password","sp.copy":"Kopyaha","sp.open":"Ablihi ang live demo",
 "how.h2":"Praktikal nga Paagi sa AI Transformation",
 "how.lede":"Lima ka yugto ang magdala kaninyo gikan sa problema sa negosyo hangtod sa sistema nga gigamit sa inyong team adlaw-adlaw. Makita ninyo ang pag-uswag sa matag lakang.",
 "how.1t":"SUSIHA","how.1p":"Sabta ang problema sa negosyo.","how.1d":"Makig-istorya mi sa mga tag-iya ug sa mga tawo nga mismong nagtrabaho.",
@@ -1497,6 +1542,11 @@ dialog.inq-modal::backdrop{background:rgba(11,22,35,.5)}
     }).catch(function(){btn.disabled=false;err.textContent=t('errSave');err.hidden=false});
   });
 })();
+</script>
+<script>
+document.addEventListener('click',function(e){var b=e.target.closest('.sp-copy');if(!b)return;var el=document.getElementById(b.getAttribute('data-copy'));if(!el)return;
+  var t=el.textContent.trim(),old=b.textContent;function done(){b.textContent='✓';setTimeout(function(){b.textContent=old},1400)}
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,function(){});else{var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);try{document.execCommand('copy');done()}catch(err){}}});
 </script>
 </body>
 </html>
