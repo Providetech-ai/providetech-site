@@ -91,7 +91,7 @@
           "value": "providetech-hub.vercel.app"
         }
       ],
-      "destination": "https://providetech-site.vercel.app/:path",
+      "destination": "https://providetechai.live/:path",
       "permanent": false
     },
     {
