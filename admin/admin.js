@@ -725,7 +725,7 @@
       return '<button type="button" class="tab" data-act="hview" data-id="' + v[0] + '" aria-pressed="' + (S.h.view === v[0]) + '">' + esc(v[1]) + '<span class="c num">' + c + "</span></button>";
     }).join("") + "</div>";
     var head = '<header class="page-head"><div><h1>Builder Hub</h1><p>Members and everything inside the hub. Only <b>Published</b> items are visible to members.</p></div>' +
-      '<div class="head-actions"><a class="btn btn-g" href="/hub/" target="_blank" rel="noopener">Open the hub ↗</a>' +
+      '<div class="head-actions"><a class="btn btn-g" href="' + String((window.PROVIDETECH_CONFIG || {}).hubUrl || "").replace(/\/+$/, "") + '/hub/" target="_blank" rel="noopener">Open the hub ↗</a>' +
       (S.h.view === "members" ? '<button class="btn btn-p" data-act="hub-add">' + I.plus + "Add member</button>" :
         S.h.view === "courses" ? '<button class="btn btn-p" data-act="course-new">' + I.plus + "New course</button>" :
         S.h.view === "replays" ? '<button class="btn btn-p" data-act="replay-new">' + I.plus + "New replay</button>" :

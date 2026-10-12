@@ -4,6 +4,7 @@
 (function () {
   "use strict";
   var CFG = window.PROVIDETECH_CONFIG || {};
+  var SITE = String(CFG.siteUrl || "").replace(/\/+$/, ""); // main website (the hub may live on its own address)
   var LIVE = !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
   var CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js";
   var app = document.getElementById("app");
@@ -374,7 +375,7 @@
   };
 
   /* ---------- auth screens ---------- */
-  var brand = '<a class="brand" href="/" aria-label="PROVIDETECH home"><img src="/assets/logo-mark.png" alt=""><img class="word" src="/assets/logo-word.png" alt="PROVIDETECH AI Assistance"></a>';
+  var brand = '<a class="brand" href="' + SITE + '/" aria-label="PROVIDETECH home"><img src="/assets/logo-mark.png" alt=""><img class="word" src="/assets/logo-word.png" alt="PROVIDETECH AI Assistance"></a>';
   function pwField(id, label, auto, hint) {
     return '<div class="field"><label for="' + id + '">' + esc(label) + '</label><div class="pw"><input class="input" id="' + id + '" name="' + id + '" type="password" autocomplete="' + auto + '" required><button type="button" data-show="' + id + '" aria-label="' + T("Show password") + '">' + T("Show") + '</button></div>' + (hint ? "<small>" + esc(hint) + "</small>" : "") + "</div>";
   }
@@ -394,7 +395,7 @@
       '<form id="f" class="field" style="gap:16px" novalidate><div class="field"><label for="em">' + T("Email") + '</label><input class="input" id="em" type="email" autocomplete="username" required' + (LIVE ? "" : ' value="member@providetech.demo"') + "></div>" +
       pwField("pw", T("Password"), "current-password") +
       '<p class="form-error" role="alert" hidden></p><button class="btn btn-p" type="submit">' + T("Sign in") + '</button></form>' +
-      '<div class="auth-links"><a href="#/forgot">' + T("Forgot password?") + '</a><a href="/">' + T("← Back to website") + '</a></div>' +
+      '<div class="auth-links"><a href="#/forgot">' + T("Forgot password?") + '</a><a href="' + SITE + '/">' + T("← Back to website") + '</a></div>' +
       '<p class="spam-tip">' + T("Waiting for your access email? In Gmail, check <b>Spam</b> and the <b>Promotions</b> tab, or search for <b>PROVIDETECH</b>. If it's in Spam, open it and tap <b>Report not spam</b>.") + '</p>');
     var f = document.getElementById("f");
     f.addEventListener("submit", function (e) {
@@ -461,7 +462,7 @@
     return '<div class="shell' + (S.menu ? " open" : "") + '"><aside class="side" aria-label="Hub menu">' + brand +
       '<div class="side-title"><b>Builder Hub</b><span>' + T("Member workspace") + '</span></div><nav class="nav">' + nav + "</nav>" +
       '<div class="me"><span class="av">' + esc(initials(m.name || m.email)) + '</span><span style="min-width:0"><b>' + esc(m.name || first(m.email)) + "</b><small>" + (m.team ? T("Team account") : "Lv " + level(m.points) + " · " + (m.points || 0) + " pts") + '</small></span><button class="out" data-act="signout">' + T("Sign out") + '</button></div></aside>' +
-      '<div class="scrim" data-act="menu"></div><main class="main"><div class="top"><button class="menu-btn" data-act="menu" aria-label="Open menu">' + ic("menu") + '</button><span class="crumb">Builder Hub / <b>' + esc(title) + '</b></span><span class="stats">' + (m.team ? '<span class="chip">' + T("Team") + '</span>' : '<a class="chip" href="#/leaderboard"><b>' + (m.points || 0) + '</b> pts</a><span class="chip">Lv <b>' + level(m.points) + "</b>&nbsp;" + esc(levelName(m.points)) + "</span>") + '' + langPicker() + '<a class="chip" href="/">' + T("Main website ↗") + '</a></span></div>' + content + "</main></div>";
+      '<div class="scrim" data-act="menu"></div><main class="main"><div class="top"><button class="menu-btn" data-act="menu" aria-label="Open menu">' + ic("menu") + '</button><span class="crumb">Builder Hub / <b>' + esc(title) + '</b></span><span class="stats">' + (m.team ? '<span class="chip">' + T("Team") + '</span>' : '<a class="chip" href="#/leaderboard"><b>' + (m.points || 0) + '</b> pts</a><span class="chip">Lv <b>' + level(m.points) + "</b>&nbsp;" + esc(levelName(m.points)) + "</span>") + '' + langPicker() + '<a class="chip" href="' + SITE + '/">' + T("Main website ↗") + '</a></span></div>' + content + "</main></div>";
   }
   function viewHome() {
     var m = S.member;
@@ -736,7 +737,7 @@
     var m = S.member;
     return authPage('<div><h1>' + (m ? T("Your access has ended") : T("No Builder Hub access")) + '</h1><p class="sub">' +
       (m ? T("Your Builder Hub membership ended on {date}. Message us from the website to renew.", { date: esc(fmtDate(m.access_until)) }) : T("This account ({email}) doesn't have Builder Hub access yet. You get it by adding the Builder Hub when you reserve a workshop seat.", { email: esc(S.user && S.user.email) })) +
-      '</p></div><a class="btn btn-p" href="/">' + T("Go to the website") + '</a><div class="auth-links"><button class="btn btn-g" data-act="signout" style="width:100%">' + T("Sign out") + "</button></div>");
+      '</p></div><a class="btn btn-p" href="' + SITE + '/">' + T("Go to the website") + '</a><div class="auth-links"><button class="btn btn-g" data-act="signout" style="width:100%">' + T("Sign out") + "</button></div>");
   }
 
   function render() {

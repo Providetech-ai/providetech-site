@@ -12,6 +12,9 @@
   To go back to DEMO MODE (sample data in your browser), empty both values.
 */
 window.PROVIDETECH_CONFIG = {
+  // Main website (homepage, checkout, admin) and the Builder Hub address. No slash at the end.
+  siteUrl: "https://providetech-site.vercel.app",
+  hubUrl: "https://providetech-hub.vercel.app",
   supabaseUrl: "https://bfojtvszuvhajmwfkapk.supabase.co",
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmb2p0dnN6dXZoYWptd2ZrYXBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyNzMwNzEsImV4cCI6MjEwNjg0OTA3MX0.sCU_AVat1_4UmXb4TylydipxKZSQsvondh5WEGnMBCY"
 };

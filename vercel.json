@@ -70,5 +70,51 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "providetech-hub.vercel.app"
+        }
+      ],
+      "destination": "/hub/",
+      "permanent": false
+    },
+    {
+      "source": "/:path((?!hub(?:/|$)|assets/).+)",
+      "has": [
+        {
+          "type": "host",
+          "value": "providetech-hub.vercel.app"
+        }
+      ],
+      "destination": "https://providetech-site.vercel.app/:path",
+      "permanent": false
+    },
+    {
+      "source": "/hub",
+      "missing": [
+        {
+          "type": "host",
+          "value": "providetech-hub.vercel.app"
+        }
+      ],
+      "destination": "https://providetech-hub.vercel.app/hub/",
+      "permanent": false
+    },
+    {
+      "source": "/hub/:path*",
+      "missing": [
+        {
+          "type": "host",
+          "value": "providetech-hub.vercel.app"
+        }
+      ],
+      "destination": "https://providetech-hub.vercel.app/hub/:path*",
+      "permanent": false
+    }
   ]
 }

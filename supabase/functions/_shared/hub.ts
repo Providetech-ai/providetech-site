@@ -27,6 +27,13 @@ export function siteBase(...candidates: (string | null | undefined)[]) {
   return "";
 }
 
+// The hub can live on its own address (HUB_URL secret, e.g. https://providetech-hub.vercel.app).
+// Without it, hub links use the main website address.
+export function hubBase(site: string) {
+  const v = String(Deno.env.get("HUB_URL") || "").trim().replace(/\/+$/, "");
+  return /^https:\/\/[a-z0-9.-]+(:\d+)?$/i.test(v) ? v : site;
+}
+
 // ---------- members ----------
 export async function hubMonths(db: any) {
   const { data } = await db.from("settings").select("value").eq("key", "hub_offer").maybeSingle();
@@ -173,7 +180,8 @@ ${reset ? "" : `<tr><td style="padding:24px 36px 0;font:400 15px/1.7 ${SANS};col
 /** Emails the member a link: a one-time "set password" link (new or reset), or a plain login link. */
 export async function sendHubAccess(db: any, m: any, site: string, kind: "welcome" | "login" | "reset") {
   if (!site) return { ok: false as const, error: "SITE_URL", message: "Unknown website address for the hub link. Add SITE_URL in Supabase secrets." };
-  const link = kind === "login" ? `${site}/hub/` : `${site}/hub/#/set-password?t=${await makeToken(db, m.user_id, kind === "reset" ? "reset" : "welcome")}`;
+  const hub = hubBase(site);
+  const link = kind === "login" ? `${hub}/hub/` : `${hub}/hub/#/set-password?t=${await makeToken(db, m.user_id, kind === "reset" ? "reset" : "welcome")}`;
   const mail = buildHubEmail(m, link, kind);
   const sent = await deliver({ to: m.email, subject: mail.subject, html: mail.html, text: mail.text });
   if (!sent.ok) return sent;
