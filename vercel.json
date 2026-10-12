@@ -106,6 +106,17 @@
       "permanent": false
     },
     {
+      "source": "/hub/",
+      "missing": [
+        {
+          "type": "host",
+          "value": "providetech-hub.vercel.app"
+        }
+      ],
+      "destination": "https://providetech-hub.vercel.app/hub/",
+      "permanent": false
+    },
+    {
       "source": "/hub/:path*",
       "missing": [
         {
