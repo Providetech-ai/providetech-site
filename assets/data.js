@@ -49,6 +49,19 @@
   }
   function addDays(d, n) { var x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; }
   function todayYmd() { return ymd(new Date()); }
+  // Online (Zoom) sessions stop taking bookings 1 hour before they start (same rule as the database).
+  var BOOKING_CUTOFF_MIN = 60;
+  function sessionStartMs(s) {
+    var m = /(\d{1,2})(?::(\d{2}))?\s*([AaPp])\.?\s*[Mm]/.exec(String((s && s.time_label) || ""));
+    if (!m || !/^\d{4}-\d{2}-\d{2}$/.test(String(s.date || ""))) return null;
+    var h = (Number(m[1]) % 12) + (m[3].toUpperCase() === "P" ? 12 : 0), mm = Number(m[2]) || 0;
+    return Date.parse(s.date + "T" + (h < 10 ? "0" : "") + h + ":" + (mm < 10 ? "0" : "") + mm + ":00+08:00");
+  }
+  function bookingClosed(s) {
+    if (!s || (s.format || "online") !== "online") return false;
+    var t = sessionStartMs(s);
+    return t !== null && Date.now() >= t - BOOKING_CUTOFF_MIN * 60000;
+  }
   function cleanText(v, max) { return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max || 500); }
   function cleanPhone(v) {
     v = String(v || "").replace(/\D/g, "");
@@ -182,7 +195,7 @@
       var d = load(), t = todayYmd();
       return later(d.sessions.filter(function (s) { return s.status === "open" && s.date >= t; })
         .sort(function (a, b) { return a.date < b.date ? -1 : 1; })
-        .map(function (s) { var x = clone(s); x.seats_left = Math.max(0, s.capacity - activeCount(d, s.id)); return x; }));
+        .map(function (s) { var x = clone(s); x.seats_left = Math.max(0, s.capacity - activeCount(d, s.id)); x.booking_closed = bookingClosed(s); return x; }));
     },
     publicSettings: function () {
       var d = load(), out = {};
@@ -195,6 +208,7 @@
       if (d.settings.checkout && d.settings.checkout.open === false) return rejectLater(fail("CHECKOUT_CLOSED", "Reservations are closed right now."));
       var s = d.sessions.filter(function (x) { return x.id === r.session_id; })[0];
       if (!s || s.status !== "open") return rejectLater(fail("CLOSED", "This session is no longer open for reservations."));
+      if (bookingClosed(s)) return rejectLater(fail("BOOKING_CLOSED", "Registration for this session closed 1 hour before it starts."));
       var prev = d.reservations.filter(function (x) { return x.session_id === s.id && ACTIVE[x.status] && String(x.email).toLowerCase() === cleanText(r.email, 200).toLowerCase(); })[0];
       if (prev && prev.status === "pending" && prev.phone === cleanPhone(r.phone)) {
         var ap = hubAddonPrice(d, r.addon);
@@ -393,8 +407,9 @@
       if (res.error) {
         var m = res.error.message || "Something went wrong.";
         if (/FULL/.test(m)) throw fail("FULL", "This session is full.");
-        if (/CLOSED/.test(m)) throw fail("CLOSED", "This session is no longer open for reservations.");
         if (/CHECKOUT_CLOSED/.test(m)) throw fail("CHECKOUT_CLOSED", "Reservations are closed right now.");
+        if (/BOOKING_CLOSED/.test(m)) throw fail("BOOKING_CLOSED", "Registration for this session closed 1 hour before it starts.");
+        if (/CLOSED/.test(m)) throw fail("CLOSED", "This session is no longer open for reservations.");
         if (/ADDRESS/.test(m)) throw fail("ADDRESS", "Please enter the full address where we'll visit you.");
         if (/EMPTY/.test(m)) throw fail("EMPTY", "Choose at least one item.");
         if (/DUPLICATE|reservations_one_active_per_email/.test(m)) throw fail("DUPLICATE", "This email already has a seat in this session.");
@@ -417,7 +432,12 @@
   var live = {
     mode: "live",
     ready: loadSupabase,
-    publicSessions: function () { return withSb(function (c) { return q(c.rpc("public_sessions_v2")); }); },
+    publicSessions: function () {
+      return withSb(function (c) {
+        return q(c.rpc("public_sessions_v3")).catch(function () { return q(c.rpc("public_sessions_v2")); })
+          .then(function (rows) { return (rows || []).map(function (s) { if (typeof s.booking_closed !== "boolean") s.booking_closed = bookingClosed(s); return s; }); });
+      });
+    },
     publicSettings: function () {
       return withSb(function (c) {
         return q(c.from("settings").select("key,value").in("key", PUBLIC_SETTING_KEYS)).then(function (rows) {
