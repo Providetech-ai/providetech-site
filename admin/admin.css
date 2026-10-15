@@ -220,6 +220,8 @@ dialog.modal::backdrop{background:rgba(11,22,35,.45)}
 .loading{display:grid;place-items:center;min-height:60vh;color:var(--ink-3)}
 
 /* ---------- responsive ---------- */
+.analytics-stack{display:grid;gap:20px}.analytics-stack h2{margin-bottom:12px}.analytics-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.analytics-chart{height:150px;display:flex;align-items:flex-end;gap:3px;overflow:hidden;border-bottom:1px solid var(--rule)}.analytics-bar{height:100%;flex:1;min-width:1px;display:flex;align-items:flex-end}.analytics-bar span{width:100%;background:var(--ink-3);border-radius:3px 3px 0 0}.analytics-funnel{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}.analytics-funnel div{display:grid;gap:8px;padding:12px;background:var(--bg);border-radius:8px}.analytics-funnel strong{font-size:24px}.analytics-caption{position:absolute;clip-path:inset(50%);height:1px;width:1px;overflow:hidden}.analytics-stack .form-grid{margin-bottom:20px}.analytics-stack .t th[scope=row]{color:var(--ink);font-weight:500}.analytics-stack details summary{cursor:pointer}
+@media(max-width:700px){.analytics-two{grid-template-columns:1fr}}
 @media (max-width:960px){
   .shell{display:block}
   .side{position:fixed;inset:0 auto 0 0;z-index:60;height:100%;transform:translateX(-100%);transition:transform .2s;box-shadow:var(--shadow)}

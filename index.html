@@ -526,9 +526,33 @@ section{scroll-margin-top:84px}
 .samples{margin-top:clamp(56px,7vw,88px);display:grid;gap:12px}
 .samples-h{font-family:var(--display);font-size:clamp(1.3rem,2.2vw,1.7rem);letter-spacing:-.02em;margin:0}
 .samples-sub{margin:0 0 10px;color:var(--ink-2);max-width:62ch}
+.sp-carousel{display:grid;gap:16px;min-width:0}
+.sp-track{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 20px) / 2);gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;overscroll-behavior-x:contain;padding:4px 2px 10px;margin:0 -2px;scrollbar-width:none;align-items:stretch}
+.sp-track::-webkit-scrollbar{display:none}
+.sp-track:focus-visible{outline:3px solid var(--blue-ink);outline-offset:4px;border-radius:14px}
+.sp-track>.sp-card{scroll-snap-align:start;max-width:none;align-content:start;min-width:0}
+.sp-track>.sp-card .sp-open{align-self:end}
+.sp-nav{display:flex;align-items:center;justify-content:center;gap:14px}
+.sp-nav[hidden]{display:none}
+.sp-arrow{width:44px;height:44px;border-radius:50%;border:1px solid var(--line-strong);background:var(--white);color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:background .2s,color .2s,border-color .2s,opacity .2s}
+.sp-arrow:hover:not(:disabled){background:var(--blue-ink);border-color:var(--blue-ink);color:#fff}
+.sp-arrow:focus-visible{outline:3px solid var(--blue-ink);outline-offset:3px}
+.sp-arrow:disabled{opacity:.35;cursor:default}
+.sp-dots{display:flex;gap:8px;align-items:center}
+.sp-dot{width:9px;height:9px;border-radius:999px;border:0;padding:0;background:var(--line-strong);cursor:pointer;transition:width .25s,background .25s}
+.sp-dot[aria-current="true"]{width:26px;background:var(--blue-ink)}
+.sp-dot:focus-visible{outline:3px solid var(--blue-ink);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){.sp-track{scroll-behavior:auto}.sp-dot,.sp-arrow{transition:none}}
+.sp-preview{display:block;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--bg);aspect-ratio:16/9}
+.sp-preview img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+.sp-preview:hover{border-color:var(--blue-ink)}
+.sp-preview:focus-visible{outline:3px solid var(--blue-ink);outline-offset:4px}
+@media (max-width:760px){.sp-track{grid-auto-columns:88%;gap:14px}}
 .sp-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg,18px);padding:clamp(20px,3vw,28px);display:grid;gap:16px;max-width:620px;box-shadow:var(--shadow-sm)}
 .sp-top{display:flex;gap:14px;align-items:center}
 .sp-icon{width:46px;height:46px;border-radius:12px;background:#F26B2A;color:#fff;display:grid;place-items:center;flex-shrink:0}
+.sp-icon-courtflow{background:#2563EB}
+.sp-icon-retailflow{background:#2563EB}
 .sp-kicker{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--blue-ink)}
 .sp-title{margin:4px 0 0;font-size:1.2rem;font-weight:700}
 .sp-desc{margin:0;color:var(--ink-2);line-height:1.6}
@@ -914,7 +938,10 @@ section{scroll-margin-top:84px}
     <div class="samples" id="live-samples">
       <h3 class="samples-h"><span data-i18n="sp.h">Try a live sample project</span></h3>
       <p class="samples-sub"><span data-i18n="sp.sub">Real systems we built with AI. Log in with the demo account and click around. It's sample data, so you can't break anything.</span></p>
-      <article class="sp-card" data-reveal>
+      <div class="sp-carousel" data-reveal role="region" aria-roledescription="carousel" aria-label="Live sample projects">
+      <div class="sp-track" id="spTrack" tabindex="0" aria-label="Sample projects. Use the arrow keys to scroll.">
+      <article class="sp-card" role="group" aria-roledescription="slide">
+        <a class="sp-preview" href="https://jc-sisig.vercel.app/" target="_blank" rel="noopener" aria-label="Open JC Sisig live demo"><img src="/assets/jc-sisig-preview.jpg" alt="JC Sisig business dashboard with sales, expenses and inventory summaries" width="1265" height="712" loading="lazy" decoding="async"></a>
         <div class="sp-top">
           <span class="sp-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1.5 3 4.5 4.5 4.5 8.5a4.5 4.5 0 0 1-9 0c0-2 1-3.2 2-4.2.3 1.4 1.1 2.2 2 2.4C11 8 11.5 5.5 12 3Z"/><path d="M7 21h10"/></svg></span>
           <div>
@@ -931,6 +958,43 @@ section{scroll-margin-top:84px}
         </div>
         <a class="btn btn-primary sp-open" href="https://jc-sisig.vercel.app/" target="_blank" rel="noopener"><span data-i18n="sp.open">Open the live demo</span> <span class="arr" aria-hidden="true">↗</span></a>
       </article>
+      <article class="sp-card" role="group" aria-roledescription="slide">
+        <a class="sp-preview" href="https://courtflow-sample.vercel.app/dashboard" target="_blank" rel="noopener" aria-label="Open CourtFlow live demo"><img src="/assets/courtflow-preview.jpg" alt="CourtFlow dashboard with booking activity, revenue and court availability" width="1265" height="712" loading="lazy" decoding="async"></a>
+        <div class="sp-top">
+          <span class="sp-icon sp-icon-courtflow" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="3"/></svg></span>
+          <div>
+            <span class="sp-kicker"><span data-i18n="cf.kicker">Live sample system</span></span>
+            <h4 class="sp-title">CourtFlow</h4>
+          </div>
+        </div>
+        <p class="sp-desc"><span data-i18n="cf.desc">Explore the CourtFlow sample dashboard and see another example of a digital system in action.</span></p>
+        <a class="btn btn-primary sp-open" href="https://courtflow-sample.vercel.app/dashboard" target="_blank" rel="noopener"><span data-i18n="sp.open">Open the live demo</span> <span class="arr" aria-hidden="true">↗</span></a>
+      </article>
+      <article class="sp-card" role="group" aria-roledescription="slide">
+        <a class="sp-preview" href="https://retailflow-pos-xi.vercel.app/dashboard" target="_blank" rel="noopener" aria-label="Open RetailFlow POS live demo"><img src="/assets/retailflow-preview.jpg" alt="RetailFlow POS dashboard showing sales, transactions, products and inventory" width="1265" height="712" loading="lazy" decoding="async"></a>
+        <div class="sp-top">
+          <span class="sp-icon sp-icon-retailflow" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18l-2-6H5l-2 6Z"/><path d="M4 10v10h16V10M9 20v-6h6v6M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/></svg></span>
+          <div>
+            <span class="sp-kicker"><span data-i18n="rf.kicker">Point of sale · Retail business</span></span>
+            <h4 class="sp-title">RetailFlow POS</h4>
+          </div>
+        </div>
+        <p class="sp-desc"><span data-i18n="rf.desc">Manage sales, products, inventory and customers in one retail workspace. Explore the POS terminal, transactions and reports with the demo account.</span></p>
+        <ul class="sp-tags"><li data-i18n="rf.pos">Point of sale</li><li data-i18n="sp.t1">Inventory</li><li data-i18n="sp.t2">Sales</li><li data-i18n="rf.reports">Reports</li></ul>
+        <div class="sp-cred" role="group" aria-label="RetailFlow POS demo login">
+          <span class="sp-cred-h"><span data-i18n="sp.login">Demo login</span></span>
+          <div class="sp-row"><span class="sp-k" data-i18n="rf.email">Email</span><code id="rfUser">admin@retailflow.demo</code><button type="button" class="sp-copy" data-copy="rfUser" data-i18n="sp.copy">Copy</button></div>
+          <div class="sp-row"><span class="sp-k" data-i18n="sp.pass">Password</span><code id="rfPass">Admin123!</code><button type="button" class="sp-copy" data-copy="rfPass" data-i18n="sp.copy">Copy</button></div>
+        </div>
+        <a class="btn btn-primary sp-open" href="https://retailflow-pos-xi.vercel.app/dashboard" target="_blank" rel="noopener"><span data-i18n="sp.open">Open the live demo</span> <span class="arr" aria-hidden="true">↗</span></a>
+      </article>
+      </div>
+      <div class="sp-nav" id="spNav">
+        <button type="button" class="sp-arrow" data-sp="-1" aria-label="Previous project" aria-controls="spTrack"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg></button>
+        <div class="sp-dots" id="spDots"></div>
+        <button type="button" class="sp-arrow" data-sp="1" aria-label="Next project" aria-controls="spTrack"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 3 5 5-5 5"/></svg></button>
+      </div>
+      </div>
     </div>
   </div>
 </section>
@@ -1238,6 +1302,8 @@ section{scroll-margin-top:84px}
 <script>
 window.PT_I18N={
 tl:{
+"cf.kicker":"Live na sample system","cf.desc":"I-explore ang sample dashboard ng CourtFlow at tingnan ang isa pang halimbawa ng gumaganang digital system.",
+"rf.kicker":"Point of sale · Negosyong tingi","rf.desc":"Pamahalaan ang benta, mga produkto, imbentaryo at mga customer sa isang retail workspace. Subukan ang POS terminal, mga transaksyon at mga report gamit ang demo account.","rf.pos":"Point of sale","rf.reports":"Mga report","rf.email":"Email",
 "navs.home":"Home","navs.solutions":"Solusyon","navs.how":"Proseso","navs.workshops":"Workshop","navs.projects":"Proyekto","navs.about":"Tungkol sa Amin","cta.nav":"Magsimula Na",
 "nav.home":"Home","nav.solutions":"Mga Solusyon","nav.how":"Paano Ito Gumagana","nav.workshops":"Mga AI Workshop","nav.projects":"Mga Proyekto","nav.about":"Tungkol sa Amin","nav.contact":"Makipag-ugnayan",
 "cta.start":"Simulan ang Inyong AI Transformation",
@@ -1304,6 +1370,8 @@ tl:{
 "foot.tag":"Mga business system, automation at training na pinapagana ng AI."
 },
 ceb:{
+"cf.kicker":"Live nga sample system","cf.desc":"Suhira ang sample dashboard sa CourtFlow ug tan-awa ang laing pananglitan sa usa ka naglihok nga digital system.",
+"rf.kicker":"Point of sale · Retail nga negosyo","rf.desc":"Dumalaa ang baligya, mga produkto, imbentaryo ug mga customer sa usa ka retail workspace. Sulayi ang POS terminal, mga transaksyon ug mga report gamit ang demo account.","rf.pos":"Point of sale","rf.reports":"Mga report","rf.email":"Email",
 "navs.home":"Home","navs.solutions":"Solusyon","navs.how":"Proseso","navs.workshops":"Workshop","navs.projects":"Proyekto","navs.about":"Mahitungod","cta.nav":"Magsugod Na",
 "nav.home":"Home","nav.solutions":"Mga Solusyon","nav.how":"Giunsa Kini Paglihok","nav.workshops":"Mga AI Workshop","nav.projects":"Mga Proyekto","nav.about":"Mahitungod Kanamo","nav.contact":"Kontaka Kami",
 "cta.start":"Sugdi ang Inyong AI Transformation",
@@ -1415,6 +1483,7 @@ ceb:{
 })();
 </script>
 <script src="/assets/config.js"></script>
+<script src="/assets/analytics.js"></script>
 <script src="/assets/data.js"></script>
 <script>
 /* Admin → Settings → Checkout: when closed, the Reserve buttons point to the contact form instead. */
@@ -1538,9 +1607,36 @@ dialog.inq-modal::backdrop{background:rgba(11,22,35,.5)}
     if(ph&&!/^9\d{9}$/.test(ph)){err.textContent=t('errPhone');err.hidden=false;f.phone.focus();return}
     var btn=form.querySelector('button[type=submit]');btn.disabled=true;
     PT.submitInquiry({name:name,business:f.business.value,email:email,phone:ph,need:f.need.value,message:f.message.value,source:source,lang:document.documentElement.getAttribute('lang')||'en'}).then(function(){
+      if(window.PTAnalytics)window.PTAnalytics.track('lead');
       btn.disabled=false;form.reset();show('done');document.getElementById('inqDoneClose').focus();
     }).catch(function(){btn.disabled=false;err.textContent=t('errSave');err.hidden=false});
   });
+})();
+</script>
+<script>
+/* Live sample projects carousel: swipe / scroll natively; arrows, dots and arrow keys move one card */
+(function(){
+  var track=document.getElementById('spTrack'),nav=document.getElementById('spNav'),dots=document.getElementById('spDots');
+  if(!track||!nav)return;
+  var cards=[].slice.call(track.children),prev=nav.querySelector('[data-sp="-1"]'),next=nav.querySelector('[data-sp="1"]');
+  var titles=cards.map(function(c,i){var t=c.querySelector('.sp-title');return t?t.textContent.trim():'Project '+(i+1)});
+  cards.forEach(function(c,i){c.setAttribute('aria-label',(i+1)+' of '+cards.length+': '+titles[i]);
+    var d=document.createElement('button');d.type='button';d.className='sp-dot';d.setAttribute('aria-label','Show '+titles[i]);
+    d.addEventListener('click',function(){go(i)});dots.appendChild(d)});
+  var dotEls=[].slice.call(dots.children);
+  function step(){return cards.length>1?cards[1].offsetLeft-cards[0].offsetLeft:track.clientWidth}
+  function idx(){return Math.max(0,Math.min(cards.length-1,Math.round(track.scrollLeft/step())))}
+  function go(i){i=Math.max(0,Math.min(cards.length-1,i));track.scrollTo({left:cards[i].offsetLeft-cards[0].offsetLeft,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}
+  function update(){
+    var max=track.scrollWidth-track.clientWidth;
+    nav.hidden=max<=2;
+    var i=idx();dotEls.forEach(function(d,k){d.setAttribute('aria-current',k===i?'true':'false')});
+    prev.disabled=track.scrollLeft<=2;next.disabled=track.scrollLeft>=max-2;
+  }
+  var raf=0;track.addEventListener('scroll',function(){if(!raf)raf=requestAnimationFrame(function(){raf=0;update()})},{passive:true});
+  prev.addEventListener('click',function(){go(idx()-1)});next.addEventListener('click',function(){go(idx()+1)});
+  track.addEventListener('keydown',function(e){if(e.target!==track)return;if(e.key==='ArrowRight'){e.preventDefault();go(idx()+1)}else if(e.key==='ArrowLeft'){e.preventDefault();go(idx()-1)}});
+  window.addEventListener('resize',update);update();
 })();
 </script>
 <script>

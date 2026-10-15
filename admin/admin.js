@@ -11,7 +11,8 @@
     p: { batch: null, tab: "all", q: "", sel: null },
     i: { tab: "new", sel: null },
     pay: { period: "30" },
-    ex: { period: "month" }
+    ex: { period: "month" },
+    analytics: { period: "30", data: null, loading: false, error: "", request: 0 }
   };
 
   /* ------------------------------------------------------------------ icons */
@@ -215,13 +216,14 @@
     f.addEventListener("submit", function (e) {
       e.preventDefault();
       var btn = f.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "Signing in…";
-      PT.auth.signIn(f.email.value, f.password.value).then(function (u) { S.user = u; return reload(); })
+      PT.auth.signIn(f.email.value, f.password.value).then(function (u) { S.user = u; return reload().then(function(){if(S.route === "analytics")return loadAnalytics();}); })
         .catch(function (ex) { renderLogin(ex.message); });
     });
   }
 
   /* -------------------------------------------------------------- shell */
-  var ROUTES = ["overview", "workshops", "participants", "payments", "expenses", "inquiries", "hub", "settings"];
+  var ROUTES = ["overview", "workshops", "participants", "payments", "expenses", "inquiries", "hub", "settings", "analytics"];
+  I.analytics = I.reports;
   function navLink(key, label, badge) {
     var on = S.route === key;
     return '<a class="nav-link' + (on ? " on" : "") + '" href="#/' + key + '"' + (on ? ' aria-current="page"' : "") + ">" + I[key] + esc(label) + (badge || "") + "</a>";
@@ -243,6 +245,7 @@
       navLink("participants", "Participants") +
       navLink("payments", "Payments") +
       navLink("expenses", "Expenses") +
+      navLink("analytics", "Analytics") +
       navLink("inquiries", "Inquiries", newQ ? '<span class="count hot">' + newQ + " new</span>" : "") +
       navLink("hub", "Builder Hub", activeMembers().length ? '<span class="count soft">' + activeMembers().length + "</span>" : "") +
       "</div></nav>" +
@@ -1074,20 +1077,42 @@
         } });
   }
 
+  function loadAnalytics() {
+    if(!S.user) return Promise.resolve();
+    var state=S.analytics, token=++state.request; state.loading=true; state.error=""; render();
+    return PT.admin.analytics(state.period).then(function(data){if(token!==state.request)return;state.data=data;state.loading=false;render();}).catch(function(err){if(token!==state.request)return;state.loading=false;state.error=err.message||"Could not load analytics";render();});
+  }
+  function analyticsTable(title, rows, packageNames) {
+    var campaign=title==='By campaign', cols=packageNames?['Name','Booked orders','Paid orders','Revenue']:['Name','Visitors','Checkout','Booked orders','Paid orders','Bought %','Revenue'];if(campaign)cols.push('Ad spend','ROAS');
+    return '<section class="card"><h2>'+esc(title)+'</h2><div class="table-wrap"><table class="t"><caption class="analytics-caption">'+esc(title)+'</caption><thead><tr>'+cols.map(function(c){return '<th scope="col">'+esc(c)+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(r){var values=packageNames?[r.booked,r.paid,peso(r.revenue)]:[r.visitors,r.checkout,r.booked,r.paid,r.bought===null?'—':r.bought.toFixed(1)+'%',peso(r.revenue)];if(campaign)values.push(peso(r.spend),r.roas===null?'—':r.roas.toFixed(2)+'×');return '<tr><th scope="row">'+esc(packageNames && packageNames[r.name] || r.name)+'</th>'+values.map(function(v){return '<td>'+esc(v)+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table>'+(rows.length?'':'<p class="muted">No activity for this period.</p>')+'</div></section>';
+  }
+  function analyticsChart(rows,key,title) {
+    var max=Math.max.apply(null,[1].concat(rows.map(function(r){return r[key];})));
+    return '<section class="card"><h2>'+esc(title)+'</h2><div class="analytics-chart" role="img" aria-label="'+esc(title+': '+(rows.length?rows.map(function(r){return r.date+' '+r[key];}).join(', '):'No data'))+'">'+rows.map(function(r){return '<div class="analytics-bar" title="'+esc(r.date+': '+r[key])+'"><span style="height:'+Math.max(1,r[key]/max*100)+'%"></span></div>';}).join('')+'</div><p class="muted">'+(rows.length?esc(rows[0].date+' — '+rows[rows.length-1].date):'No activity recorded')+'</p><details><summary>Daily values</summary><div class="table-wrap"><table class="t"><thead><tr><th scope="col">Date</th><th scope="col">'+esc(title)+'</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><th scope="row">'+esc(r.date)+'</th><td>'+r[key]+'</td></tr>';}).join('')+'</tbody></table></div></details></section>';
+  }
+  function viewAnalytics() {
+    var state=S.analytics, head='<header class="page-head"><div><h1>Analytics</h1><p>Website activity, paid orders and advertising returns.</p></div><div class="head-actions">'+['7','30','90','all'].map(function(p){return '<button class="btn '+(p===state.period?'btn-p':'btn-g')+'" data-act="analytics-period" data-id="'+p+'" aria-pressed="'+(p===state.period)+'">'+(p==='all'?'All time':p+' days')+'</button>';}).join('')+'<button class="btn" data-act="analytics-refresh">Refresh</button></div></header>';
+    if(state.loading) return head+'<div class="card" role="status">Loading analytics…</div>';
+    if(state.error) return head+'<div class="card" role="alert">'+esc(state.error)+'</div>';
+    if(!state.data) return head+'<div class="card">Select Refresh to load analytics.</div>';
+    var m=window.PTAnalytics.build(state.data,state.period), names={}; D().sessions.forEach(function(s){names[s.id]=s.title;});
+    var metrics=[['Visitors',m.visitors],['Page views',m.pageViews],['Visitors from ads',m.fromAds],['Started checkout',m.checkout],['Checkout rate',m.checkoutRate===null?'—':m.checkoutRate.toFixed(1)+'%'],['Booked orders',m.booked],['Paid orders',m.paid],['Revenue',peso(m.revenue)],['Ad spend',peso(m.spend)],['ROAS',m.roas===null?'—':m.roas.toFixed(2)+'×'],['CPA',m.cpa===null?'—':peso(m.cpa)]];
+    return head+'<div class="analytics-stack"><p class="muted">Calendar days in Asia/Manila. Bookings use creation date; paid orders and revenue use payment date. Revenue includes add-ons and excludes refunded orders; requested refunds count until processed. Visitors from ads use paid UTM medium tags. Checkout rate counts page-view visitors who started checkout. CPA = spend ÷ paid orders; overall ROAS = total revenue ÷ spend, including organic sales. Use campaign ROAS to judge a specific ad campaign.</p><div class="kpis">'+metrics.map(function(k){return '<div class="card kpi"><span class="label">'+k[0]+'</span><strong class="value">'+k[1]+'</strong></div>';}).join('')+'</div><p class="muted">Tracking started: '+esc(state.data.started_at?fmtDT(state.data.started_at):'No events recorded yet')+'. Visitor counts require a tracked browser identifier; untracked bookings still count as orders.</p><div class="analytics-two">'+analyticsChart(m.daily,'visitors','Daily visitors')+analyticsChart(m.daily,'paid','Daily paid orders')+'</div><section class="card"><h2>Visitor funnel</h2><p class="muted">Each step counts its own unique visitors. People can skip steps or return across periods; these are independent counts, so no predecessor conversion percentages are shown.</p><div class="analytics-funnel">'+m.funnel.map(function(k){return '<div><span>'+esc(k[0])+'</span><strong>'+k[1]+'</strong></div>';}).join('')+'</div></section><p class="muted">Attribution uses UTM tags recorded with each visit or booking; untagged visits use the external referrer. Bought % is the share of page-view visitors in each row with a paid order in this period. Buyers outside that visitor set still count as paid orders. A visitor can appear under multiple sources; do not sum rows for unique visitors. Package revenue separates Builder Hub add-ons.</p>'+analyticsTable('By source',m.source)+analyticsTable('By campaign',m.campaign)+analyticsTable('By ad / UTM content',m.content)+analyticsTable('Revenue by package',m.package,names)+'<section class="card"><h2>Ad spend</h2><p class="muted">Enter daily spend in pesos using the same campaign name as your UTM tag. Spend is entered manually.</p><form data-form="ad-spend" class="form-grid">'+field(lbl('ad-date','Date'),'<input class="input" id="ad-date" name="date" type="date" required value="'+window.PTAnalytics.day(new Date().toISOString())+'">')+field(lbl('ad-campaign','Campaign'),'<input class="input" id="ad-campaign" name="campaign" maxlength="200" required>')+field(lbl('ad-amount','Spend (₱)'),'<input class="input" id="ad-amount" name="amount" type="number" min="0.01" step="0.01" required>')+'<div><button class="btn btn-p" type="submit">Add spend</button></div></form><div class="table-wrap"><table class="t"><thead><tr><th scope="col">Date</th><th scope="col">Campaign</th><th scope="col">Spend</th><th scope="col">Action</th></tr></thead><tbody>'+m.spendRows.map(function(s){return '<tr><td>'+esc(s.date)+'</td><td>'+esc(s.campaign)+'</td><td>'+peso(s.amount)+'</td><td><button class="btn btn-g btn-sm" data-act="analytics-remove" data-id="'+esc(s.id)+'" aria-label="'+esc('Remove spend for '+s.campaign+' on '+s.date)+'">Remove</button></td></tr>';}).join('')+'</tbody></table></div></section><section class="card"><h2>Ad setup</h2><p>Add UTM tags to each ad destination URL. Use a consistent campaign name and a different content value for each creative. Paste the generated URL into your ad platform. Meta Pixel 1014444408413826 is configured on the public pages. Events: PageView, ViewContent, AddToCart, InitiateCheckout, AddPaymentInfo, Lead, Contact and database-verified Purchase. Verify delivery in Events Manager → Test events. Browser blockers and privacy opt-outs can prevent Pixel delivery.</p><form data-form="ad-link" class="form-grid">'+[['url','Destination URL',location.origin+'/'],['source','Source','facebook'],['medium','Medium','paid_social'],['campaign','Campaign',''],['content','Ad / creative','']].map(function(k){return field(lbl('utm-'+k[0],k[1]),'<input class="input" id="utm-'+k[0]+'" name="'+k[0]+'" value="'+esc(k[2])+'" maxlength="2000" required>');}).join('')+'<div><button class="btn btn-p" type="submit">Generate and copy URL</button></div><div class="span2">'+field(lbl('utm-result','Generated URL'),'<textarea class="input" id="utm-result" name="result" readonly rows="3"></textarea>')+'</div></form></section></div>';
+  }
   /* -------------------------------------------------------------- render */
   function render() {
     if (!S.user) return renderLogin();
     if (!S.data) { app.innerHTML = '<div class="loading">Loading…</div>'; return; }
     var a = document.activeElement, focusId = a && a.id, caret = null;
     try { caret = a && a.selectionStart; } catch (e) {}
-    var views = { overview: viewOverview, workshops: viewWorkshops, participants: viewParticipants, payments: viewPayments, expenses: viewExpenses, inquiries: viewInquiries, hub: viewHub, settings: viewSettings };
+    var views = { analytics: viewAnalytics, overview: viewOverview, workshops: viewWorkshops, participants: viewParticipants, payments: viewPayments, expenses: viewExpenses, inquiries: viewInquiries, hub: viewHub, settings: viewSettings };
     app.innerHTML = shell((views[S.route] || viewOverview)());
-    document.title = ({ overview: "Overview", workshops: "Workshops", participants: "Participants", payments: "Payments", expenses: "Expenses", inquiries: "Inquiries", hub: "Builder Hub", settings: "Settings" }[S.route] || "Admin") + " · PROVIDETECH Admin";
+    document.title = ({ analytics: "Analytics", overview: "Overview", workshops: "Workshops", participants: "Participants", payments: "Payments", expenses: "Expenses", inquiries: "Inquiries", hub: "Builder Hub", settings: "Settings" }[S.route] || "Admin") + " · PROVIDETECH Admin";
     if (focusId) { var el = document.getElementById(focusId); if (el) { el.focus(); try { if (caret != null) el.setSelectionRange(caret, caret); } catch (e) {} } }
   }
   function go(route) { if (location.hash !== "#/" + route) location.hash = "#/" + route; else render(); }
   function readRoute() { var r = (location.hash || "").replace(/^#\/?/, ""); S.route = ROUTES.indexOf(r) >= 0 ? r : "overview"; S.menu = false; }
-  window.addEventListener("hashchange", function () { readRoute(); render(); window.scrollTo(0, 0); refresh(); });
+  window.addEventListener("hashchange", function () { readRoute(); render(); if(S.route === "analytics") loadAnalytics(); window.scrollTo(0, 0); refresh(); });
   // keep data fresh: new reservations and inquiries show up without a manual reload
   function refresh() {
     if (!S.user || !S.data || S.busy) return;
@@ -1108,9 +1133,12 @@
     var t = e.target.closest("[data-act]"); if (!t || !app.contains(t)) return;
     var a = t.getAttribute("data-act"), id = t.getAttribute("data-id"), r;
     switch (a) {
+      case "analytics-refresh": loadAnalytics(); break;
+      case "analytics-period": S.analytics.period = id; loadAnalytics(); break;
+      case "analytics-remove": t.disabled = true; PT.admin.removeAdSpend(id).then(function(){return loadAnalytics();}).catch(function(err){toast(err.message || "Could not remove spend"); t.disabled=false;}); break;
       case "menu": S.menu = !S.menu; render(); break;
       case "menu-close": S.menu = false; render(); break;
-      case "signout": PT.auth.signOut().then(function () { S.user = null; S.data = null; location.hash = ""; renderLogin(); }); break;
+      case "signout": PT.auth.signOut().then(function () { S.user = null; S.data = null; S.analytics.data=null; S.analytics.request++; location.hash = ""; renderLogin(); }); break;
       case "modal-close": e.preventDefault(); closeModal(); break;
       case "new-batch": batchForm(null); break;
       case "new-sub": subForm(null); break;
@@ -1293,6 +1321,17 @@
   app.addEventListener("submit", function (e) {
     var f = e.target.closest("form[data-form]"); if (!f) return;
     e.preventDefault();
+    if (f.getAttribute("data-form") === "ad-spend") {
+      var adDate=f.elements.date.value, adAmount=Number(f.elements.amount.value), adCampaign=f.elements.campaign.value.trim();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(adDate) || !Number.isFinite(Date.parse(adDate)) || new Date(adDate+'T00:00:00Z').toISOString().slice(0,10)!==adDate || !Number.isFinite(adAmount) || adAmount<=0 || !adCampaign || adCampaign.length>200) {toast("Enter a valid date, campaign and positive spend amount"); return;}
+      var submit=f.querySelector('[type="submit"]'); submit.disabled=true;
+      PT.admin.addAdSpend({date:adDate,campaign:adCampaign,amount:adAmount}).then(function(){toast("Ad spend saved");return loadAnalytics();}).catch(function(err){toast(err.message||"Could not save spend");submit.disabled=false;}); return;
+    }
+    if (f.getAttribute("data-form") === "ad-link") {
+      var url; try {url=new URL(f.elements.url.value); if(!/^https?:$/.test(url.protocol)) throw new Error();} catch(err) {toast("Enter an http or https destination URL");return;}
+      ['source','medium','campaign','content'].forEach(function(key){url.searchParams.set('utm_'+key,f.elements[key].value.trim());});
+      f.querySelector('[name="result"]').value=url.href; copyText(url.href,"Ad URL copied"); return;
+    }
     if (f.getAttribute("data-form") === "checkout") {
       var cur = checkoutSetting(), to = (e.submitter && e.submitter.value) || "save";
       var next = { open: to === "open" ? true : to === "close" ? false : cur.open !== false, message: String(f.elements.message.value || "").trim().slice(0, 300) };
@@ -1336,6 +1375,6 @@
   PT.ready().then(function () { return PT.auth.user(); }).then(function (u) {
     S.user = u;
     if (!u) return renderLogin();
-    return reload();
+    return reload().then(function(){if(S.route === "analytics") return loadAnalytics();});
   }).catch(function (e) { app.innerHTML = '<div class="loading">' + esc(e.message || "Couldn't start the admin.") + "</div>"; });
 })();

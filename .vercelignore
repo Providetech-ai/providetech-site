@@ -1,5 +1,6 @@
 # Not part of the website: keep these off the public site
 supabase/
+tests/
 README.md
 serve.ps1
 netlify.toml

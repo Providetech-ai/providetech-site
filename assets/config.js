@@ -12,6 +12,7 @@
   To go back to DEMO MODE (sample data in your browser), empty both values.
 */
 window.PROVIDETECH_CONFIG = {
+  metaPixelId: "1014444408413826",
   // Main website (homepage, checkout, admin) and the Builder Hub address. No slash at the end.
   siteUrl: "https://providetechai.live",
   hubUrl: "https://providetech-hub.vercel.app",
