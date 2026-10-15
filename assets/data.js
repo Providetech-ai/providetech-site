@@ -144,9 +144,24 @@
       { id: "q-5", name: "Ana Bayan", business: "Bayan Tutorials", email: "ana@bayantutorials.example.com", phone: "9391112045", need: "Student, schedule & payment management", message: "Two branches, 180 students. Need schedules and payment tracking.", source: "Discuss Your Business Idea", status: "proposal", notes: "Proposal sent. Follow up next week.", created_at: at(6, 10, 0) },
       { id: "q-6", name: "Jun Ocampo", business: "Northpoint Realty", email: "jun@northpoint.example.com", phone: "9269990321", need: "Property & lead management", message: "Agents track leads in personal notebooks.", source: "Discuss Your Business Idea", status: "won", notes: "Project started.", created_at: at(21, 9, 30) }
     ];
-    return { v: 1, sessions: [s06, s07, s08, s09, s10, s11], reservations: reservations, inquiries: inquiries, settings: clone(DEFAULT_SETTINGS) };
+    return { v: 1, sessions: [s06, s07, s08, s09, s10, s11], reservations: reservations, inquiries: inquiries, settings: clone(DEFAULT_SETTINGS), subscriptions: demoSubscriptions(), expenses: [] };
   }
 
+  function demoSubscriptions() {
+    return [["Zoom", "software"], ["Vimeo", "software"], ["Supabase", "software"], ["Vercel", "software"], ["Salary", "salary"]]
+      .map(function (x, k) { return { id: "sub-" + (k + 1), name: x[0], category: x[1], billing: "monthly", amount: 0, active: true, sort: k + 1, created_at: nowIso() }; });
+  }
+  var FIN_TABLES = ["subscriptions", "expenses"];
+  function cleanFinance(table, row) {
+    var amt = Math.max(0, Math.min(100000000, Math.round(Number(String(row.amount == null ? "" : row.amount).replace(/[^\d.]/g, "")) || 0)));
+    if (table === "subscriptions") {
+      return { name: cleanText(row.name, 80), category: ["software", "salary", "other"].indexOf(row.category) >= 0 ? row.category : "other",
+        billing: row.billing === "yearly" ? "yearly" : "monthly", amount: amt, active: row.active !== false && row.active !== "false" };
+    }
+    return { spent_on: /^\d{4}-\d{2}-\d{2}$/.test(String(row.spent_on || "")) ? row.spent_on : todayYmd(),
+      category: ["ads", "venue", "materials", "equipment", "transport", "food", "other"].indexOf(row.category) >= 0 ? row.category : "other",
+      description: cleanText(row.description, 200), amount: amt };
+  }
   function load() {
     var raw = null;
     try { raw = localStorage.getItem(STORE_KEY); } catch (e) {}
@@ -157,6 +172,7 @@
           var pl = d.settings && d.settings.payment_links;
           if (!pl || !(pl.all || pl.card || pl.gcash || pl.qrph)) { d.settings.payment_links = clone(DEFAULT_SETTINGS.payment_links); save(d); }
           Object.keys(DEFAULT_SETTINGS).forEach(function (k) { if (d.settings[k] === undefined) d.settings[k] = clone(DEFAULT_SETTINGS[k]); });
+          if (!d.subscriptions) { d.subscriptions = demoSubscriptions(); d.expenses = d.expenses || []; save(d); }
           return d;
         }
       } catch (e) {}
@@ -280,6 +296,21 @@
     },
     admin: {
       all: function () { return later(load()); },
+      saveFinance: function (table, row) {
+        if (FIN_TABLES.indexOf(table) < 0) return rejectLater(fail("TABLE", "Unknown table."));
+        var data = cleanFinance(table, row);
+        if (table === "subscriptions" && !data.name) return rejectLater(fail("NAME", "Enter a name."));
+        if (table === "expenses" && !(data.amount > 0)) return rejectLater(fail("AMOUNT", "Enter an amount."));
+        var d = load(), list = d[table], i = -1;
+        list.forEach(function (x, k) { if (x.id === row.id) i = k; });
+        if (i >= 0) Object.keys(data).forEach(function (k) { list[i][k] = data[k]; });
+        else { data.id = uid(); data.created_at = nowIso(); if (table === "subscriptions") data.sort = list.length + 1; list.push(data); }
+        save(d); return later(i >= 0 ? list[i] : data);
+      },
+      removeFinance: function (table, id) {
+        if (FIN_TABLES.indexOf(table) < 0) return rejectLater(fail("TABLE", "Unknown table."));
+        var d = load(); d[table] = d[table].filter(function (x) { return x.id !== id; }); save(d); return later(true);
+      },
       saveSession: function (s) {
         var d = load(), i = -1;
         d.sessions.forEach(function (x, k) { if (x.id === s.id) i = k; });
@@ -517,13 +548,15 @@
             q(c.from("lessons").select("*").order("sort").order("created_at")).catch(function () { return []; }),
             q(c.from("replays").select("*").order("recorded_on", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false })).catch(function () { return []; }),
             q(c.from("prompts").select("*").order("category").order("sort").order("created_at")).catch(function () { return []; }),
-            q(c.rpc("hub_points_all")).catch(function () { return []; })
+            q(c.rpc("hub_points_all")).catch(function () { return []; }),
+            q(c.from("subscriptions").select("*").order("sort").order("created_at")).catch(function () { return []; }),
+            q(c.from("expenses").select("*").order("spent_on", { ascending: false }).order("created_at", { ascending: false }).limit(5000)).catch(function () { return []; })
           ]).then(function (r) {
             var pts = {}; (r[9] || []).forEach(function (x) { pts[x.user_id] = x.points; });
             (r[4] || []).forEach(function (m) { m.points = pts[m.user_id] || 0; });
             var settings = clone(DEFAULT_SETTINGS);
             (r[3] || []).forEach(function (x) { settings[x.key] = x.value; });
-            return { sessions: r[0] || [], reservations: r[1] || [], inquiries: r[2] || [], settings: settings, members: r[4] || [], courses: r[5] || [], lessons: r[6] || [], replays: r[7] || [], prompts: r[8] || [] };
+            return { sessions: r[0] || [], reservations: r[1] || [], inquiries: r[2] || [], settings: settings, members: r[4] || [], courses: r[5] || [], lessons: r[6] || [], replays: r[7] || [], prompts: r[8] || [], subscriptions: r[10] || [], expenses: r[11] || [] };
           });
         });
       },
@@ -571,6 +604,17 @@
       },
       paymongo: function (action) { return withSb(function (c) { return invoke(c, "paymongo-setup", { action: action || "status" }); }); },
       // Builder Hub content: table is courses | lessons | replays | prompts
+      saveFinance: function (table, row) {
+        if (FIN_TABLES.indexOf(table) < 0) return Promise.reject(fail("TABLE", "Unknown table."));
+        var data = cleanFinance(table, row);
+        if (table === "subscriptions" && !data.name) return Promise.reject(fail("NAME", "Enter a name."));
+        if (table === "expenses" && !(data.amount > 0)) return Promise.reject(fail("AMOUNT", "Enter an amount."));
+        return withSb(function (c) { return q((row.id ? c.from(table).update(data).eq("id", row.id) : c.from(table).insert(data)).select().single()); });
+      },
+      removeFinance: function (table, id) {
+        if (FIN_TABLES.indexOf(table) < 0) return Promise.reject(fail("TABLE", "Unknown table."));
+        return withSb(function (c) { return q(c.from(table).delete().eq("id", id)); });
+      },
       saveContent: function (table, row) {
         if (["courses", "lessons", "replays", "prompts"].indexOf(table) < 0) return Promise.reject(fail("TABLE", "Unknown content type."));
         var data = clone(row), id = data.id; delete data.id; delete data.created_at;

@@ -10,11 +10,13 @@
     h: { tab: "active", q: "", sel: null, view: "members" },
     p: { batch: null, tab: "all", q: "", sel: null },
     i: { tab: "new", sel: null },
-    pay: { period: "30" }
+    pay: { period: "30" },
+    ex: { period: "month" }
   };
 
   /* ------------------------------------------------------------------ icons */
   var I = {
+    expenses: '<svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 1.8h10v12.4l-1.7-1.1-1.6 1.1-1.7-1.1-1.6 1.1-1.7-1.1L3 14.2z"/><path d="M5.5 5h5M5.5 7.6h5M5.5 10.2h3"/></svg>',
     hub: '<svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="m8 1.8 5.6 3.1v6.2L8 14.2l-5.6-3.1V4.9z"/><path d="M2.4 4.9 8 8l5.6-3.1M8 8v6.2"/></svg>',
     overview: '<svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg>',
     workshops: '<svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="12" height="11" rx="1.6"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg>',
@@ -219,7 +221,7 @@
   }
 
   /* -------------------------------------------------------------- shell */
-  var ROUTES = ["overview", "workshops", "participants", "payments", "inquiries", "hub", "settings"];
+  var ROUTES = ["overview", "workshops", "participants", "payments", "expenses", "inquiries", "hub", "settings"];
   function navLink(key, label, badge) {
     var on = S.route === key;
     return '<a class="nav-link' + (on ? " on" : "") + '" href="#/' + key + '"' + (on ? ' aria-current="page"' : "") + ">" + I[key] + esc(label) + (badge || "") + "</a>";
@@ -240,6 +242,7 @@
       navLink("workshops", "Workshops", openB ? '<span class="count soft">' + openB + " open</span>" : "") +
       navLink("participants", "Participants") +
       navLink("payments", "Payments") +
+      navLink("expenses", "Expenses") +
       navLink("inquiries", "Inquiries", newQ ? '<span class="count hot">' + newQ + " new</span>" : "") +
       navLink("hub", "Builder Hub", activeMembers().length ? '<span class="count soft">' + activeMembers().length + "</span>" : "") +
       "</div></nav>" +
@@ -955,15 +958,131 @@
         : '<p><b>Live</b> · connected to <span style="font-family:var(--mono)">' + esc((cfg.supabaseUrl || "").replace(/^https?:\/\//, "")) + "</span>. Admin access is controlled by the admins table in Supabase.</p>") + "</section></div>";
   }
 
+  /* -------------------------------------------------------------- expenses */
+  var SUB_CAT = { software: "Software", salary: "Salary", other: "Other" };
+  var EXP_CAT = { ads: "Facebook ads", venue: "Venue rental", materials: "Materials", equipment: "Equipment", transport: "Transport", food: "Food & snacks", other: "Other" };
+  function subs() { return (D().subscriptions || []).slice().sort(function (a, b) { return (a.sort || 0) - (b.sort || 0) || (a.created_at < b.created_at ? -1 : 1); }); }
+  function perMonth(x) { var a = Number(x.amount) || 0; return x.billing === "yearly" ? a / 12 : a; }
+  function exRange() {
+    var now = new Date(), y = now.getFullYear(), m = now.getMonth(), from, to, months, label;
+    if (S.ex.period === "last") { from = new Date(y, m - 1, 1); to = new Date(y, m, 1); months = 1; label = "Last month's share"; }
+    else if (S.ex.period === "year") { from = new Date(y, 0, 1); to = new Date(y + 1, 0, 1); months = m + 1; label = months + (months === 1 ? " month's share" : " months' share") + " this year"; }
+    else { from = new Date(y, m, 1); to = new Date(y, m + 1, 1); months = 1; label = "This month's share"; }
+    return { from: from, to: to, months: months, label: label };
+  }
+  function ymdOf(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function viewExpenses() {
+    var rg = exRange(), fromYmd = ymdOf(rg.from), toYmd = ymdOf(rg.to);
+    var paid = D().reservations.filter(function (r) {
+      if (!r.paid_at || !(r.status === "paid" || r.status === "refund_requested")) return false;
+      var t = new Date(r.paid_at); return t >= rg.from && t < rg.to;
+    });
+    var revenue = paid.reduce(function (a, r) { return a + (Number(r.amount) || 0); }, 0);
+    var exps = (D().expenses || []).filter(function (e) { return e.spent_on >= fromYmd && e.spent_on < toYmd; })
+      .sort(function (a, b) { return a.spent_on < b.spent_on ? 1 : a.spent_on > b.spent_on ? -1 : (a.created_at < b.created_at ? 1 : -1); });
+    var ads = exps.filter(function (e) { return e.category === "ads"; }), other = exps.filter(function (e) { return e.category !== "ads"; });
+    var adTotal = ads.reduce(function (a, e) { return a + e.amount; }, 0), otherTotal = other.reduce(function (a, e) { return a + e.amount; }, 0);
+    var list = subs(), active = list.filter(function (x) { return x.active !== false; });
+    var monthly = active.reduce(function (a, x) { return a + perMonth(x); }, 0), subShare = Math.round(monthly * rg.months);
+    var costs = adTotal + subShare + otherTotal, net = revenue - costs;
+
+    // where the money goes
+    var parts = [];
+    if (adTotal) parts.push(["Facebook ads", adTotal]);
+    active.forEach(function (x) { var v = Math.round(perMonth(x) * rg.months); if (v) parts.push([x.name, v]); });
+    var byCat = {}; other.forEach(function (e) { byCat[e.category] = (byCat[e.category] || 0) + e.amount; });
+    Object.keys(byCat).forEach(function (k) { parts.push([EXP_CAT[k] || k, byCat[k]]); });
+    parts.sort(function (a, b) { return b[1] - a[1]; });
+    var top = parts.length ? parts[0][1] : 0;
+
+    var kpi = function (label, value, sub, cls) { return '<div class="card kpi"><span class="label">' + esc(label) + '</span><span class="value' + (cls ? " " + cls : "") + '">' + value + '</span><span class="sub">' + sub + "</span></div>"; };
+    var subRows = list.map(function (x) {
+      var on = x.active !== false, amt = Number(x.amount) || 0;
+      return '<tr><td><b style="font-weight:600">' + esc(x.name) + '</b><br><span class="muted" style="font-size:12.5px">' + esc(SUB_CAT[x.category] || x.category) + "</span></td>" +
+        "<td>" + (amt ? peso(amt) + ' <span class="muted">/ ' + (x.billing === "yearly" ? "year" : "month") + "</span>" : '<button class="btn btn-g btn-sm" data-act="edit-sub" data-id="' + esc(x.id) + '">Set amount</button>') + "</td>" +
+        '<td class="num">' + (amt ? peso(perMonth(x)) : "—") + "</td>" +
+        "<td>" + (on ? '<span class="pill ok">Active</span>' : '<span class="pill mute">Paused</span>') + "</td>" +
+        '<td style="text-align:right"><button class="btn btn-g btn-sm" data-act="edit-sub" data-id="' + esc(x.id) + '">Edit</button></td></tr>';
+    }).join("");
+    var expRows = other.map(function (e) {
+      return '<tr class="click" data-act="edit-exp" data-id="' + esc(e.id) + '"><td class="muted">' + esc(fmtDate(e.spent_on)) + "</td><td><b style=\"font-weight:600\">" + esc(e.description || EXP_CAT[e.category] || "Expense") + '</b></td><td>' + esc(EXP_CAT[e.category] || e.category) + '</td><td class="num" style="text-align:right">' + peso(e.amount) + "</td></tr>";
+    }).join("");
+    var adRows = ads.map(function (e) {
+      return '<tr class="click" data-act="edit-exp" data-id="' + esc(e.id) + '"><td class="muted">' + esc(fmtDate(e.spent_on)) + "</td><td><b style=\"font-weight:600\">" + esc(e.description || "Facebook ads") + '</b></td><td class="num" style="text-align:right">' + peso(e.amount) + "</td></tr>";
+    }).join("");
+
+    return '<header class="page-head"><div><h1>Expenses</h1><p>What the business spends, and what is left after costs.</p></div>' +
+      '<div class="head-actions"><label for="experiod" class="muted" style="font-weight:500">Period</label><select class="input" id="experiod" data-model="ex.period" style="width:auto">' +
+      opt("month", "This month", S.ex.period) + opt("last", "Last month", S.ex.period) + opt("year", "This year", S.ex.period) + "</select>" +
+      '<button class="btn btn-p" data-act="new-exp">' + I.plus + "Add expense</button></div></header>" +
+      '<section class="kpis">' +
+      kpi("Revenue", peso(revenue), paid.length + (paid.length === 1 ? " paid booking" : " paid bookings")) +
+      kpi("Ad spend", peso(adTotal), ads.length ? ads.length + (ads.length === 1 ? " entry" : " entries") + ' · <a href="#" data-act="new-ad">Add</a>' : '<a href="#" data-act="new-ad">Add ad spend</a>') +
+      kpi("Subscriptions & salary", peso(subShare), esc(rg.label)) +
+      kpi("Other expenses", peso(otherTotal), other.length + (other.length === 1 ? " expense" : " expenses")) +
+      kpi(net >= 0 ? "Net profit" : "Net loss", (net < 0 ? "−" : "") + peso(Math.abs(net)), "Revenue minus all costs", net < 0 ? "down" : "up") +
+      "</section>" +
+      '<section class="card"><div class="card-head"><h2>Subscriptions & salary</h2><button class="btn btn-g btn-sm" data-act="new-sub">' + I.plus + "Add</button></div>" +
+      '<div class="table-wrap"><table class="t"><thead><tr><th>Name</th><th>Billed</th><th>Per month</th><th>Status</th><th></th></tr></thead><tbody>' +
+      (subRows || '<tr><td colspan="5" class="muted">Nothing yet. Add tools you pay for (Zoom, Vercel…) and salaries.</td></tr>') +
+      '</tbody><tfoot><tr><td colspan="2"><b>Total per month right now</b></td><td class="num"><b>' + peso(monthly) + '</b></td><td colspan="2" class="muted">' + peso(monthly * 12) + " a year</td></tr></tfoot></table></div></section>" +
+      '<section class="card"><div class="card-head"><h2>Where the money goes</h2><span class="muted">' + peso(costs) + " total</span></div>" +
+      (parts.length ? '<div style="display:grid;gap:12px">' + parts.map(function (p) {
+        var w = top ? Math.max(2, Math.round(p[1] / top * 100)) : 0;
+        return '<div><div style="display:flex;justify-content:space-between;gap:12px;font-size:14px;margin-bottom:5px"><span>' + esc(p[0]) + '</span><b class="num">' + peso(p[1]) + "</b></div>" +
+          '<div style="height:8px;border-radius:99px;background:var(--mute-bg);overflow:hidden"><div style="height:100%;width:' + w + '%;background:var(--blue);border-radius:99px"></div></div></div>';
+      }).join("") + "</div>" : '<div class="empty">No costs in this period yet.</div>') + "</section>" +
+      '<section class="card"><div class="card-head"><h2>Facebook ads</h2><button class="btn btn-g btn-sm" data-act="new-ad">' + I.plus + "Add ad spend</button></div>" +
+      (adRows ? '<div class="table-wrap"><table class="t"><thead><tr><th>Date</th><th>Campaign</th><th style="text-align:right">Amount</th></tr></thead><tbody>' + adRows + "</tbody></table></div>"
+        : '<div class="empty">No ad spend entered for this period. Copy the "Amount spent" from Meta Ads Manager.</div>') + "</section>" +
+      '<section class="card"><div class="card-head"><h2>Other expenses</h2><button class="btn btn-g btn-sm" data-act="new-exp">' + I.plus + "Add expense</button></div>" +
+      (expRows ? '<div class="table-wrap"><table class="t"><thead><tr><th>Date</th><th>What</th><th>Category</th><th style="text-align:right">Amount</th></tr></thead><tbody>' + expRows + "</tbody></table></div>"
+        : '<div class="empty">No one-time expenses in this period. Add things like venue rental, materials, equipment or transport.</div>') + "</section>" +
+      '<p class="muted" style="font-size:12.5px;margin:0">Revenue counts paid bookings in the period (refunded ones are left out). Subscriptions use today\'s amounts for the whole period.</p>';
+  }
+  function subForm(x) {
+    var isNew = !x; x = x || { name: "", category: "software", billing: "monthly", amount: "", active: true };
+    openModal(isNew ? "Add subscription or salary" : "Edit " + x.name,
+      '<div class="form-grid">' +
+      '<div class="span2">' + field(lbl("sname", "Name"), '<input class="input" id="sname" name="name" required maxlength="80" placeholder="e.g. Zoom Pro, Canva, Assistant salary" value="' + esc(x.name) + '">') + "</div>" +
+      field(lbl("scat", "Type"), '<select class="input" id="scat" name="category">' + opt("software", "Software / subscription", x.category) + opt("salary", "Salary", x.category) + opt("other", "Other recurring", x.category) + "</select>") +
+      field(lbl("sbill", "Billed"), '<select class="input" id="sbill" name="billing">' + opt("monthly", "Every month", x.billing) + opt("yearly", "Every year", x.billing) + "</select>") +
+      field(lbl("samt", "Amount (₱)"), '<input class="input" id="samt" name="amount" type="number" inputmode="numeric" min="0" step="1" placeholder="0" value="' + esc(x.amount === 0 ? "" : x.amount) + '">', "For a yearly bill, enter the full yearly amount.") +
+      field(lbl("sact", "Status"), '<select class="input" id="sact" name="active">' + opt("true", "Active (counts as a cost)", String(x.active !== false)) + opt("false", "Paused (not counted)", String(x.active !== false)) + "</select>") +
+      "</div>",
+      { submit: isNew ? "Add" : "Save", extra: isNew ? "" : '<button type="button" class="btn btn-g" data-act="remove-sub" data-id="' + esc(x.id) + '" style="margin-right:auto">Remove</button>',
+        onSubmit: function (fd) {
+          if (!String(fd.name || "").trim()) throw new Error("Enter a name.");
+          act(PT.admin.saveFinance("subscriptions", { id: x.id, name: fd.name, category: fd.category, billing: fd.billing, amount: fd.amount, active: fd.active === "true" }), isNew ? "Added" : "Saved");
+        } });
+  }
+  function expForm(e, cat) {
+    var isNew = !e; e = e || { spent_on: ymdOf(new Date()), category: cat || "other", description: "", amount: "" };
+    var isAd = e.category === "ads";
+    openModal(isNew ? (isAd ? "Add ad spend" : "Add expense") : "Edit expense",
+      '<div class="form-grid">' +
+      field(lbl("edate", "Date"), '<input class="input" id="edate" name="spent_on" type="date" required value="' + esc(e.spent_on) + '">') +
+      field(lbl("eamt", "Amount (₱)"), '<input class="input" id="eamt" name="amount" type="number" inputmode="numeric" min="1" step="1" required value="' + esc(e.amount) + '">') +
+      field(lbl("ecat", "Category"), '<select class="input" id="ecat" name="category">' + Object.keys(EXP_CAT).map(function (k) { return opt(k, EXP_CAT[k], e.category); }).join("") + "</select>") +
+      field(lbl("edesc", isAd ? "Campaign (optional)" : "What was it for?"), '<input class="input" id="edesc" name="description" maxlength="200" placeholder="' + (isAd ? "e.g. Oct 15 webinar promo" : "e.g. Venue for Oct 17 workshop") + '" value="' + esc(e.description) + '">') +
+      "</div>" + (isAd ? '<p class="muted" style="font-size:13px;margin:12px 0 0">Copy the “Amount spent” from Meta Ads Manager for the dates you want, in pesos.</p>' : ""),
+      { submit: isNew ? "Add" : "Save", extra: isNew ? "" : '<button type="button" class="btn btn-g" data-act="remove-exp" data-id="' + esc(e.id) + '" style="margin-right:auto">Remove</button>',
+        onSubmit: function (fd) {
+          if (!(Number(fd.amount) > 0)) throw new Error("Enter an amount.");
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(fd.spent_on)) throw new Error("Choose a date.");
+          act(PT.admin.saveFinance("expenses", { id: e.id, spent_on: fd.spent_on, category: fd.category, description: fd.description, amount: fd.amount }), isNew ? "Expense added" : "Saved");
+        } });
+  }
+
   /* -------------------------------------------------------------- render */
   function render() {
     if (!S.user) return renderLogin();
     if (!S.data) { app.innerHTML = '<div class="loading">Loading…</div>'; return; }
     var a = document.activeElement, focusId = a && a.id, caret = null;
     try { caret = a && a.selectionStart; } catch (e) {}
-    var views = { overview: viewOverview, workshops: viewWorkshops, participants: viewParticipants, payments: viewPayments, inquiries: viewInquiries, hub: viewHub, settings: viewSettings };
+    var views = { overview: viewOverview, workshops: viewWorkshops, participants: viewParticipants, payments: viewPayments, expenses: viewExpenses, inquiries: viewInquiries, hub: viewHub, settings: viewSettings };
     app.innerHTML = shell((views[S.route] || viewOverview)());
-    document.title = ({ overview: "Overview", workshops: "Workshops", participants: "Participants", payments: "Payments", inquiries: "Inquiries", hub: "Builder Hub", settings: "Settings" }[S.route] || "Admin") + " · PROVIDETECH Admin";
+    document.title = ({ overview: "Overview", workshops: "Workshops", participants: "Participants", payments: "Payments", expenses: "Expenses", inquiries: "Inquiries", hub: "Builder Hub", settings: "Settings" }[S.route] || "Admin") + " · PROVIDETECH Admin";
     if (focusId) { var el = document.getElementById(focusId); if (el) { el.focus(); try { if (caret != null) el.setSelectionRange(caret, caret); } catch (e) {} } }
   }
   function go(route) { if (location.hash !== "#/" + route) location.hash = "#/" + route; else render(); }
@@ -994,6 +1113,13 @@
       case "signout": PT.auth.signOut().then(function () { S.user = null; S.data = null; location.hash = ""; renderLogin(); }); break;
       case "modal-close": e.preventDefault(); closeModal(); break;
       case "new-batch": batchForm(null); break;
+      case "new-sub": subForm(null); break;
+      case "edit-sub": subForm((D().subscriptions || []).filter(function (x) { return x.id === id; })[0]); break;
+      case "new-exp": e.preventDefault(); expForm(null, "other"); break;
+      case "new-ad": e.preventDefault(); expForm(null, "ads"); break;
+      case "edit-exp": expForm((D().expenses || []).filter(function (x) { return x.id === id; })[0]); break;
+      case "remove-sub": if (confirm("Remove this from your subscriptions & salary?")) act(PT.admin.removeFinance("subscriptions", id), "Removed"); break;
+      case "remove-exp": if (confirm("Remove this expense?")) act(PT.admin.removeFinance("expenses", id), "Expense removed"); break;
       case "edit-batch": batchForm(sess(id)); break;
       case "delete-batch": deleteBatch(sess(id)); break;
       case "copy-link": copyText(location.origin + "/checkout.html?batch=" + encodeURIComponent(id), "Reservation link copied"); break;
