@@ -224,7 +224,6 @@
     var on = S.route === key;
     return '<a class="nav-link' + (on ? " on" : "") + '" href="#/' + key + '"' + (on ? ' aria-current="page"' : "") + ">" + I[key] + esc(label) + (badge || "") + "</a>";
   }
-  function soon(icon, label) { return '<span class="nav-link soon" aria-disabled="true">' + I[icon] + esc(label) + '<span class="count">Soon</span></span>'; }
   function shell(content) {
     var openB = upcoming().filter(function (s) { return s.status === "open"; }).length;
     var newQ = D().inquiries.filter(function (q) { return q.status === "new"; }).length;
@@ -243,9 +242,6 @@
       navLink("payments", "Payments") +
       navLink("inquiries", "Inquiries", newQ ? '<span class="count hot">' + newQ + " new</span>" : "") +
       navLink("hub", "Builder Hub", activeMembers().length ? '<span class="count soft">' + activeMembers().length + "</span>" : "") +
-      "</div>" +
-      '<div class="nav-group"><span class="mono-label">Business</span>' +
-      soon("projects", "Client Projects") + soon("promo", "Promo Codes") + soon("reports", "Reports") + soon("content", "Website Content") +
       "</div></nav>" +
       '<div class="side-foot">' + navLink("settings", "Settings") +
       '<div class="mode-chip">' + (demo ? "<b>Demo mode</b> · sample data in this browser" : "<b>Live</b> · connected to your database") + "</div>" +
