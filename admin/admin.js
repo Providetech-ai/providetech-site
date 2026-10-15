@@ -482,7 +482,7 @@
         document.getElementById("bprice").value = { online: 999, f2f: 5999, home: 9999 }[v];
         document.getElementById("bcap").value = { online: 30, f2f: 15, home: 30 }[v];
         document.getElementById("btime").value = v === "home" ? "" : "9:00 AM – 5:00 PM";
-        document.getElementById("bvenue").value = v === "home" ? "Your home or office" : v === "online" ? "Online via Zoom" : "";
+        document.getElementById("bvenue").value = v === "home" ? "Your home or office" : v === "online" ? "Online via Zoom" : "San Roque St, Brgy 4, Nasugbu, Batangas 4231, Philippines";
       }
     }
     fsel.addEventListener("change", function () { syncFmt(true); }); syncFmt(false);
