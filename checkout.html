@@ -7,6 +7,7 @@
 <meta name="robots" content="noindex">
 <script>try{if(localStorage.getItem("pt-theme")==="dark")document.documentElement.setAttribute("data-mode","dark")}catch(e){}</script>
 <script src="/assets/config.js"></script>
+<script src="/assets/analytics.js" defer></script>
 <script src="/assets/data.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1050,6 +1051,7 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
     var items=orderItems();
     PT.reserveOrder({items:items.map(function(x){return {session_id:x.s.id,address:x.f==='home'?addr:'',schedule_pref:x.f==='home'?pref:''}}),name:name,email:email,phone:ph,method:pay,source:sourceTag(),lang:lang,addon:addon}).then(function(res){
       var firstId=res&&res.ids&&res.ids[0];
+      if(window.PTAnalytics && PT.mode==='live')window.PTAnalytics.booking(res.order_id||firstId);
       btn.disabled=false;btn.removeAttribute('aria-busy');
       var link=PAYMENT_LINKS[pay]||PAYMENT_LINKS.all;
       var payName={gcash:'GCash',card:tr('card','Credit Card'),qrph:tr('qrphShort','Bank via QRPH')}[pay];
@@ -1060,7 +1062,7 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
       if(onlyHome)retag(document.querySelector('#done [data-t=doneH]')||document.querySelector('#done h2'),'doneHHome','Your booking is almost done');
       form.hidden=true;var done=document.getElementById('done');done.hidden=false;done.scrollIntoView({behavior:'smooth',block:'start'});
       var holdEnd=Date.now()+(Number(HOLD_HOURS)||1)*3600000;
-      try{sessionStorage.setItem('pt-last-res',JSON.stringify({id:firstId,link:link,recap:recap.innerHTML,addon:addon,holdEnd:holdEnd,f:list.length?list.join(','):'hub'}))}catch(e){}
+      try{sessionStorage.setItem('pt-last-res',JSON.stringify({id:firstId,order_id:res.order_id,link:link,recap:recap.innerHTML,addon:addon,holdEnd:holdEnd,f:list.length?list.join(','):'hub'}))}catch(e){}
       startHoldTimer(holdEnd,onlyHome);
       openPayment(firstId,link);
     }).catch(function(err){
@@ -1101,6 +1103,10 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
   document.getElementById('addHub').addEventListener('change',updateSummary);
   function showPaid(){
     var lr=null;try{lr=JSON.parse(sessionStorage.getItem('pt-last-res')||'null')}catch(e){}
+    if(lr && window.PTAnalytics && PT.mode==='live'){
+      var purchaseId=lr.order_id||lr.id;
+      (function verifyPurchase(attempt){window.PTAnalytics.purchase(purchaseId).then(function(sent){if(!sent && attempt<5)setTimeout(function(){verifyPurchase(attempt+1)},3000)})})(0);
+    }
     var f='online';try{f=new URLSearchParams(location.search).get('f')||(lr&&lr.f)||'online'}catch(e){}
     var ph2=document.querySelector('#paidDone h2'),pp=document.querySelector('#paidDone [data-t^=paidP]');
     var fs=String(f).split(',');

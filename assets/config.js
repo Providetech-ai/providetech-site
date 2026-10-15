@@ -12,6 +12,7 @@
   To go back to DEMO MODE (sample data in your browser), empty both values.
 */
 window.PROVIDETECH_CONFIG = {
+  metaPixelId: "1014444408413826",
   supabaseUrl: "https://bfojtvszuvhajmwfkapk.supabase.co",
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmb2p0dnN6dXZoYWptd2ZrYXBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyNzMwNzEsImV4cCI6MjEwNjg0OTA3MX0.sCU_AVat1_4UmXb4TylydipxKZSQsvondh5WEGnMBCY"
 };

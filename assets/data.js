@@ -50,6 +50,7 @@
   function addDays(d, n) { var x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; }
   function todayYmd() { return ymd(new Date()); }
   function cleanText(v, max) { return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max || 500); }
+  function attribution() { try { return window.PTAnalytics ? window.PTAnalytics.context() || {} : {}; } catch (e) { return {}; } }
   function cleanPhone(v) {
     v = String(v || "").replace(/\D/g, "");
     if (v.indexOf("63") === 0) v = v.slice(2);
@@ -264,6 +265,9 @@
       signOut: function () { try { sessionStorage.removeItem("pt-demo-user"); } catch (e) {} return Promise.resolve(); }
     },
     admin: {
+      analytics: function () { var d = load(); return later({ events: [], spend: d.ad_spend || [], reservations: d.reservations || [] }); },
+      addAdSpend: function (row) { var d = load(), x = { id: uid(), date: row.date, campaign: cleanText(row.campaign, 100), amount: Number(row.amount) }; d.ad_spend = d.ad_spend || []; d.ad_spend.push(x); save(d); return later(x); },
+      removeAdSpend: function (id) { var d = load(); d.ad_spend = (d.ad_spend || []).filter(function (x) { return x.id !== id; }); save(d); return later(true); },
       all: function () { return later(load()); },
       saveSession: function (s) {
         var d = load(), i = -1;
@@ -439,8 +443,11 @@
       try { validReservation({ name: o.name, email: o.email, phone: o.phone, method: o.method }); } catch (e) { return Promise.reject(e); }
       var items = (o.items || []).slice(0, 3).map(function (it) { return { session: it.session_id, address: cleanText(it.address, 300), pref: cleanText(it.schedule_pref, 300) }; });
       return withSb(function (c) {
-        return q(c.rpc("reserve_order", { p_items: items, p_name: cleanText(o.name, 120), p_email: cleanText(o.email, 200).toLowerCase(),
-          p_phone: cleanPhone(o.phone), p_method: o.method, p_source: cleanText(o.source || "Website", 60), p_lang: cleanLang(o.lang), p_addon: !!o.addon }));
+        var a = attribution();
+        return q(c.rpc("reserve_order_with_attribution", { p_items: items, p_name: cleanText(o.name, 120), p_email: cleanText(o.email, 200).toLowerCase(),
+          p_phone: cleanPhone(o.phone), p_method: o.method, p_source: cleanText(o.source || "Website", 60), p_lang: cleanLang(o.lang), p_addon: !!o.addon,
+          p_visitor: a.visitor_id || null, p_source_tag: a.utm_source || null, p_medium_tag: a.utm_medium || null, p_campaign_tag: a.utm_campaign || null,
+          p_content_tag: a.utm_content || null, p_term_tag: a.utm_term || null, p_attribution_at: a.attribution_at || null }));
       });
     },
     // Personal PayMongo checkout for a reservation → { checkout_url } (or { already_paid })
@@ -480,6 +487,9 @@
       signOut: function () { return withSb(function (c) { return c.auth.signOut(); }); }
     },
     admin: {
+      analytics: function (days) { return withSb(function (c) { return q(c.rpc("admin_analytics_report", { p_days: days === "all" ? null : Number(days) })); }); },
+      addAdSpend: function (row) { return withSb(function (c) { return q(c.from("ad_spend").insert({ date: row.date, campaign: cleanText(row.campaign, 100), amount: Number(row.amount) }).select().single()); }); },
+      removeAdSpend: function (id) { return withSb(function (c) { return q(c.from("ad_spend").delete().eq("id", id)); }); },
       all: function () {
         return withSb(function (c) {
           return Promise.all([
