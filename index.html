@@ -529,6 +529,7 @@ section{scroll-margin-top:84px}
 .sp-carousel{display:grid;gap:16px;min-width:0}
 .sp-track{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 20px) / 2);gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;overscroll-behavior-x:contain;padding:4px 2px 10px;margin:0 -2px;scrollbar-width:none;align-items:stretch}
 .sp-track::-webkit-scrollbar{display:none}
+.sp-track.sp-flow{scroll-snap-type:none;scroll-behavior:auto}
 .sp-track:focus-visible{outline:3px solid var(--blue-ink);outline-offset:4px;border-radius:14px}
 .sp-track>.sp-card{scroll-snap-align:start;max-width:none;align-content:start;min-width:0}
 .sp-track>.sp-card .sp-open{align-self:end}
@@ -1614,29 +1615,79 @@ dialog.inq-modal::backdrop{background:rgba(11,22,35,.5)}
 })();
 </script>
 <script>
-/* Live sample projects carousel: swipe / scroll natively; arrows, dots and arrow keys move one card */
+/* Live sample projects carousel: flows continuously to the left in a seamless loop.
+   Pauses while hovered, focused or touched; swipe, arrows, dots and arrow keys still work.
+   Visitors who prefer reduced motion get the plain swipe carousel. */
 (function(){
   var track=document.getElementById('spTrack'),nav=document.getElementById('spNav'),dots=document.getElementById('spDots');
   if(!track||!nav)return;
-  var cards=[].slice.call(track.children),prev=nav.querySelector('[data-sp="-1"]'),next=nav.querySelector('[data-sp="1"]');
+  var cards=[].slice.call(track.children),n=cards.length,prev=nav.querySelector('[data-sp="-1"]'),next=nav.querySelector('[data-sp="1"]');
+  var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var flow=n>1&&!reduce, SPEED=36; // pixels per second
   var titles=cards.map(function(c,i){var t=c.querySelector('.sp-title');return t?t.textContent.trim():'Project '+(i+1)});
-  cards.forEach(function(c,i){c.setAttribute('aria-label',(i+1)+' of '+cards.length+': '+titles[i]);
+  cards.forEach(function(c,i){c.setAttribute('aria-label',(i+1)+' of '+n+': '+titles[i]);
     var d=document.createElement('button');d.type='button';d.className='sp-dot';d.setAttribute('aria-label','Show '+titles[i]);
     d.addEventListener('click',function(){go(i)});dots.appendChild(d)});
   var dotEls=[].slice.call(dots.children);
-  function step(){return cards.length>1?cards[1].offsetLeft-cards[0].offsetLeft:track.clientWidth}
-  function idx(){return Math.max(0,Math.min(cards.length-1,Math.round(track.scrollLeft/step())))}
-  function go(i){i=Math.max(0,Math.min(cards.length-1,i));track.scrollTo({left:cards[i].offsetLeft-cards[0].offsetLeft,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}
+  // A second, hidden copy of the cards makes the loop seamless
+  if(flow){
+    cards.forEach(function(c){var k=c.cloneNode(true);k.setAttribute('aria-hidden','true');k.removeAttribute('aria-label');k.removeAttribute('role');k.classList.add('sp-clone');
+      [].forEach.call(k.querySelectorAll('a,button,input,[tabindex]'),function(el){el.setAttribute('tabindex','-1')});
+      [].forEach.call(k.querySelectorAll('[id]'),function(el){el.removeAttribute('id')});
+      track.appendChild(k)});
+    track.classList.add('sp-flow');
+    track.setAttribute('aria-label','Sample projects, moving slowly. Hover, tap or focus to pause. Use the arrow keys to move.');
+  }
+  function step(){return n>1?cards[1].offsetLeft-cards[0].offsetLeft:track.clientWidth}
+  function setW(){return flow?step()*n:0}
+  function idx(){var i=Math.round(track.scrollLeft/step());return ((i%n)+n)%n}
+  var pos=track.scrollLeft, last=0, hold=0, holdUntil=0, visible=true;
+  function pauseFor(ms){holdUntil=Math.max(holdUntil,Date.now()+ms)}
+  function go(i){
+    pauseFor(3500);
+    var cur=Math.round(track.scrollLeft/step());
+    if(flow){ // move to the nearest copy of card i, ahead of or at the current one
+      var target=i; if(i<0){track.scrollLeft+=setW();cur+=n;target=cur-1}else if(i>=n){target=cur+1}else{target=cur-(cur%n)+i;if(target<cur-1)target+=n}
+      if(target*step()>track.scrollWidth-track.clientWidth){track.scrollLeft-=setW();target-=n}
+      i=target;
+    }else i=Math.max(0,Math.min(n-1,i));
+    track.scrollTo({left:cards[0].offsetLeft-cards[0].offsetLeft+i*step(),behavior:reduce?'auto':'smooth'});
+  }
   function update(){
     var max=track.scrollWidth-track.clientWidth;
     nav.hidden=max<=2;
     var i=idx();dotEls.forEach(function(d,k){d.setAttribute('aria-current',k===i?'true':'false')});
-    prev.disabled=track.scrollLeft<=2;next.disabled=track.scrollLeft>=max-2;
+    if(flow){prev.disabled=false;next.disabled=false}else{prev.disabled=track.scrollLeft<=2;next.disabled=track.scrollLeft>=max-2}
   }
   var raf=0;track.addEventListener('scroll',function(){if(!raf)raf=requestAnimationFrame(function(){raf=0;update()})},{passive:true});
   prev.addEventListener('click',function(){go(idx()-1)});next.addEventListener('click',function(){go(idx()+1)});
   track.addEventListener('keydown',function(e){if(e.target!==track)return;if(e.key==='ArrowRight'){e.preventDefault();go(idx()+1)}else if(e.key==='ArrowLeft'){e.preventDefault();go(idx()-1)}});
   window.addEventListener('resize',update);update();
+  if(!flow)return;
+  // pause while someone is looking at or touching a card
+  var hover=false,focus=false,touch=false;
+  track.addEventListener('mouseenter',function(){hover=true});track.addEventListener('mouseleave',function(){hover=false;pauseFor(600)});
+  track.addEventListener('focusin',function(){focus=true});track.addEventListener('focusout',function(){focus=false});
+  track.addEventListener('pointerdown',function(){touch=true});
+  window.addEventListener('pointerup',function(){if(touch){touch=false;pauseFor(2500)}});
+  track.addEventListener('touchstart',function(){touch=true},{passive:true});
+  track.addEventListener('touchend',function(){touch=false;pauseFor(2500)},{passive:true});
+  track.addEventListener('wheel',function(){pauseFor(2500)},{passive:true});
+  if('IntersectionObserver' in window)new IntersectionObserver(function(es){visible=es[0].isIntersecting}).observe(track);
+  function tick(t){
+    var dt=last?Math.min(64,t-last):16;last=t;
+    var w=setW();
+    if(hover||focus||touch||document.hidden||!visible||Date.now()<holdUntil||w<=0){pos=track.scrollLeft}
+    else{
+      pos+=SPEED*dt/1000;
+      if(pos>=w)pos-=w;
+      track.scrollLeft=pos;
+    }
+    // after a swipe or arrow move, quietly jump back into the first copy so the loop never runs out
+    if(!touch&&Date.now()>=holdUntil&&track.scrollLeft>=w&&w>0){track.scrollLeft-=w;pos=track.scrollLeft}
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 })();
 </script>
 <script>
