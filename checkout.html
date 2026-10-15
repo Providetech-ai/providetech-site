@@ -964,8 +964,8 @@ help:"Naa moy pangutana sa dili pa mobayad? Mag-message kanamo gikan sa homepage
         l.querySelector('b').textContent=dateLabel(s.date);
         l.querySelector('small').textContent=[s.time_label,s.venue||tr('tba','Venue or link to be announced')].filter(Boolean).join(' · ');
         var seats=l.querySelector('.seats');
-        seats.textContent=closed?tr('regClosed','Registration closed'):full?tr('full','Full'):s.seats_left+' '+(s.seats_left===1?tr('seatLeft','seat left'):tr('seatsLeft','seats left'));
-        if(!full&&s.seats_left<=5)seats.classList.add('few');
+        // seat numbers are hidden from visitors; only "Full" / "Registration closed" are shown
+        seats.textContent=closed?tr('regClosed','Registration closed'):full?tr('full','Full'):'';
         inp.addEventListener('change',function(){chosen[f]=s.id;document.getElementById('errSession').hidden=true;updateSummary()});
         grp.appendChild(l);
       });
