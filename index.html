@@ -555,19 +555,6 @@ section{scroll-margin-top:84px}
 .sp-icon-courtflow{background:#2563EB}
 .sp-icon-retailflow{background:#2563EB}
 .sp-icon-lms{background:#0F7A4D}
-/* hosts */
-.host-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(16px,2.4vw,28px);margin-top:clamp(28px,4vw,44px)}
-.host-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg,18px);box-shadow:var(--shadow-sm);display:grid;grid-template-columns:minmax(150px,34%) minmax(0,1fr);overflow:hidden}
-.host-photo{margin:0;background:var(--bg);min-height:100%}
-.host-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 20%;aspect-ratio:4/5}
-.host-body{padding:clamp(18px,2.4vw,26px);display:grid;gap:10px;align-content:start}
-.host-role{font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--blue-ink);margin:0}
-.host-name{font-family:var(--display);font-size:clamp(1.25rem,1.8vw,1.5rem);letter-spacing:-.02em;margin:0;color:var(--ink)}
-.host-body p{margin:0;color:var(--ink-2);line-height:1.6;font-size:.96rem}
-.host-body b{color:var(--ink);font-weight:600}
-@media (max-width:980px){.host-grid{grid-template-columns:1fr}}
-@media (max-width:560px){.host-card{grid-template-columns:1fr}.host-photo img{aspect-ratio:4/4;object-position:50% 18%}}
-
 .sp-kicker{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--blue-ink)}
 .sp-title{margin:4px 0 0;font-size:1.2rem;font-weight:700}
 .sp-desc{margin:0;color:var(--ink-2);line-height:1.6}
@@ -1114,36 +1101,6 @@ section{scroll-margin-top:84px}
 </section>
 
 <!-- PROOF: real face-to-face sessions -->
-<section class="section" id="hosts" style="padding-top:0">
-  <div class="wrap">
-    <div class="section-head" data-reveal>
-      <span class="eyebrow"><span data-i18n="host.eyebrow">Your Hosts</span></span>
-      <h2 class="h2"><span data-i18n="host.h2">Meet the People Who Will Guide You</span></h2>
-      <p class="lede"><span data-i18n="host.lede">The webinar is run live by Joshua and Alexis. Ask them your questions during the session.</span></p>
-    </div>
-    <div class="host-grid" data-reveal>
-      <article class="host-card">
-        <figure class="host-photo"><img src="/assets/hosts/joshua-rivera.jpg" alt="Joshua Rivera" width="480" height="600" loading="lazy" decoding="async"></figure>
-        <div class="host-body">
-          <p class="host-role"><span data-i18n="host.j.role">Webinar host · Entrepreneur</span></p>
-          <h3 class="host-name">Joshua Rivera</h3>
-          <p data-i18n-html="host.j.p1">I am a 25-year-old <b>entrepreneur</b> and business owner passionate about helping businesses grow through technology, creativity, and strategic solutions.</p>
-          <p data-i18n-html="host.j.p2">I manage three businesses in <b>Digital Marketing</b>, <b>Food Manufacturing</b>, and <b>Educational Training</b>, focused on creating practical solutions that help people and businesses achieve growth and success.</p>
-        </div>
-      </article>
-      <article class="host-card">
-        <figure class="host-photo"><img src="/assets/hosts/alexis-maligaya.jpg" alt="Alexis Maligaya" width="480" height="600" loading="lazy" decoding="async"></figure>
-        <div class="host-body">
-          <p class="host-role"><span data-i18n="host.a.role">Webinar host · IT &amp; Business Analytics</span></p>
-          <h3 class="host-name">Alexis Maligaya</h3>
-          <p data-i18n-html="host.a.p1">I am a recent graduate of <b>Batangas State University – The National Engineering University, ARASOF-Nasugbu</b>, with a Bachelor of Science in Information Technology, major in <b>Business Analytics</b>.</p>
-          <p data-i18n="host.a.p2">My background combines information technology, data, and business problem-solving. Through this webinar, I hope to show how AI-powered tools can help business owners turn everyday operational problems into practical digital solutions and working systems.</p>
-        </div>
-      </article>
-    </div>
-  </div>
-</section>
-
 <section class="section proof" id="sessions">
   <div class="wrap">
     <div class="section-head" data-reveal>
@@ -1414,7 +1371,7 @@ tl:{
 "why.1t":"Negosyo Muna","why.1p":"Inuunawa muna namin ang tunay na problema bago ang teknolohiya.",
 "why.2t":"Mabilis na Prototyping","why.2p":"Lubhang pinabibilis ng AI-assisted development ang pagbuo mula ideya hanggang sistema.",
 "why.3t":"Praktikal na Solusyon","why.3p":"Inuuna namin ang mga sistemang magagamit kaysa sa hindi kailangang teknikal na komplikasyon.",
-"host.eyebrow":"Ang Inyong mga Host","host.h2":"Kilalanin ang Gagabay sa Inyo","host.lede":"Live na pinapatakbo nina Joshua at Alexis ang webinar. Itanong sa kanila ang inyong mga tanong habang nasa session.","host.j.role":"Webinar host · Entrepreneur","host.j.p1":"Ako ay 25 taong gulang na <b>entrepreneur</b> at may-ari ng negosyo na masigasig sa pagtulong sa mga negosyo na lumago gamit ang teknolohiya, pagkamalikhain at mga estratehikong solusyon.","host.j.p2":"Pinamamahalaan ko ang tatlong negosyo sa <b>Digital Marketing</b>, <b>Food Manufacturing</b> at <b>Educational Training</b>, na nakatuon sa paggawa ng praktikal na solusyon para tulungan ang mga tao at negosyo na lumago at magtagumpay.","host.a.role":"Webinar host · IT at Business Analytics","host.a.p1":"Bagong graduate ako ng <b>Batangas State University – The National Engineering University, ARASOF-Nasugbu</b>, sa kursong Bachelor of Science in Information Technology, major in <b>Business Analytics</b>.","host.a.p2":"Pinagsasama ng background ko ang information technology, data at paglutas ng mga problema sa negosyo. Sa webinar na ito, gusto kong ipakita kung paano matutulungan ng mga AI-powered tool ang mga may-ari ng negosyo na gawing praktikal na digital na solusyon at gumaganang system ang mga pang-araw-araw na problema sa operasyon.","proof.eyebrow":"Totoong Sessions","proof.h2":"Harapang Coaching, Hindi Lang Video Course","proof.lede":"Personal naming kinikita ang mga may-ari ng negosyo sa aming opisina. Tinuturuan at ginagabayan namin sila, at sabay naming binubuo ang kanilang mga system. Mga totoong session ito kasama ang totoong mga kliyente.","proof.vid":"Isang buong klase ng workshop",
+"proof.eyebrow":"Totoong Sessions","proof.h2":"Harapang Coaching, Hindi Lang Video Course","proof.lede":"Personal naming kinikita ang mga may-ari ng negosyo sa aming opisina. Tinuturuan at ginagabayan namin sila, at sabay naming binubuo ang kanilang mga system. Mga totoong session ito kasama ang totoong mga kliyente.","proof.vid":"Isang buong klase ng workshop",
 "why.4t":"Kaalaman ng Tao + AI","why.4p":"Pinagsasama namin ang propesyonal na kaalaman sa teknolohiya at ang makabagong kakayahan ng AI.",
 "uc.eyebrow":"Mga Gamit sa Negosyo","uc.h2":"Ano ang Mabubuo Natin nang Magkasama?",
 "uc.lede":"May sariling record, iskedyul, at approval ang bawat industriya. Ito ang mga sistemang maaari naming idisenyo ayon sa inyo.",
@@ -1482,7 +1439,7 @@ ceb:{
 "why.1t":"Negosyo Una","why.1p":"Una namong sabton ang tinuod nga problema sa dili pa ang teknolohiya.",
 "why.2t":"Paspas nga Prototyping","why.2p":"Gipaspas pag-ayo sa AI-assisted development ang paghimo gikan sa ideya hangtod sa sistema.",
 "why.3t":"Praktikal nga Solusyon","why.3p":"Among unahon ang mga sistema nga magamit kaysa sa dili kinahanglang teknikal nga kakomplikado.",
-"host.eyebrow":"Ang Inyong mga Host","host.h2":"Ilha ang Mogiya Kaninyo","host.lede":"Live nga ginapadagan nila ni Joshua ug Alexis ang webinar. Ipangutana kanila ang inyong mga pangutana samtang sa session.","host.j.role":"Webinar host · Entrepreneur","host.j.p1":"Ako usa ka 25 anyos nga <b>entrepreneur</b> ug tag-iya sa negosyo nga madasigon sa pagtabang sa mga negosyo nga motubo pinaagi sa teknolohiya, pagkamamugnaon ug estratehikong mga solusyon.","host.j.p2":"Gidumala nako ang tulo ka negosyo sa <b>Digital Marketing</b>, <b>Food Manufacturing</b> ug <b>Educational Training</b>, nga nakatutok sa paghimo og praktikal nga mga solusyon aron matabangan ang mga tawo ug negosyo nga motubo ug molampos.","host.a.role":"Webinar host · IT ug Business Analytics","host.a.p1":"Bag-ong graduate ko sa <b>Batangas State University – The National Engineering University, ARASOF-Nasugbu</b>, sa kursong Bachelor of Science in Information Technology, major in <b>Business Analytics</b>.","host.a.p2":"Ang akong background naghiusa sa information technology, data ug pagsulbad sa mga problema sa negosyo. Pinaagi niining webinar, gusto nakong ipakita kung giunsa pagtabang sa mga AI-powered tool ang mga tag-iya sa negosyo nga himoong praktikal nga digital nga solusyon ug nagagamit nga system ang adlaw-adlaw nga mga problema sa operasyon.","proof.eyebrow":"Tinuod nga Sessions","proof.h2":"Atubangang Coaching, Dili Lang Video Course","proof.lede":"Personal namong gikitaan ang mga tag-iya sa negosyo sa among opisina. Among gitudloan ug gigiyahan sila, ug dungan namong gihimo ang ilang mga system. Tinuod kini nga mga session uban sa tinuod nga mga kliyente.","proof.vid":"Usa ka tibuok klase sa workshop",
+"proof.eyebrow":"Tinuod nga Sessions","proof.h2":"Atubangang Coaching, Dili Lang Video Course","proof.lede":"Personal namong gikitaan ang mga tag-iya sa negosyo sa among opisina. Among gitudloan ug gigiyahan sila, ug dungan namong gihimo ang ilang mga system. Tinuod kini nga mga session uban sa tinuod nga mga kliyente.","proof.vid":"Usa ka tibuok klase sa workshop",
 "why.4t":"Kahanas sa Tawo + AI","why.4p":"Among gihiusa ang propesyonal nga kahibalo sa teknolohiya ug ang modernong kapabilidad sa AI.",
 "uc.eyebrow":"Mga Gamit sa Negosyo","uc.h2":"Unsa ang Atong Mahimo nga Magkauban?",
 "uc.lede":"Ang matag industriya adunay kaugalingong record, iskedyul, ug approval. Kini ang mga sistema nga among madisenyo base sa inyo.",
