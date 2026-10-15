@@ -24,7 +24,8 @@
     payment_links: { all: "https://pm.link/ProvideTech/k1aTE93", gcash: "", card: "", qrph: "" },   // PayMongo payment link (₱999)
     hold_hours: 1,
     checkout: { open: true, message: "" },
-    reminders: { enabled: true, minutes: 15 },   // "Starting soon" emails before online sessions (sent by Supabase)   // Admin → Settings → Checkout: close to stop new reservations
+    reminders: { enabled: true, minutes: 15 },
+    inquiry_reply: { enabled: true },   // automatic "We got your message" email to people who send an inquiry   // "Starting soon" emails before online sessions (sent by Supabase)   // Admin → Settings → Checkout: close to stop new reservations
     hub_offer: { enabled: true, price: 1999, compare_at: 11997, months: 12 },
     refund_days: 7,
     bonuses: [
@@ -259,7 +260,7 @@
       if (!contact) return rejectLater(fail("CONTACT", "Enter an email or mobile number."));
       var d = load();
       var row = { id: uid(), name: name, business: cleanText(q.business, 160), email: cleanText(q.email, 200).toLowerCase(), phone: cleanPhone(q.phone),
-        need: cleanText(q.need, 160), message: String(q.message || "").trim().slice(0, 2000), source: cleanText(q.source || "Website", 60), status: "new", notes: "", created_at: nowIso() };
+        need: cleanText(q.need, 160), message: String(q.message || "").trim().slice(0, 2000), source: cleanText(q.source || "Website", 60), status: "new", notes: "", lang: ["en", "tl", "ceb"].indexOf(q.lang) >= 0 ? q.lang : "en", autoreply_status: q.email ? "demo (no email sent)" : "", created_at: nowIso() };
       d.inquiries.push(row); save(d);
       return later({ id: row.id });
     },
@@ -469,8 +470,12 @@
     },
     submitInquiry: function (x) {
       return withSb(function (c) {
-        return q(c.rpc("submit_inquiry", { p_name: cleanText(x.name, 120), p_business: cleanText(x.business, 160), p_email: cleanText(x.email, 200).toLowerCase(),
-          p_phone: cleanPhone(x.phone), p_need: cleanText(x.need, 160), p_message: String(x.message || "").trim().slice(0, 2000), p_source: cleanText(x.source || "Website", 60) }))
+        var a = { p_name: cleanText(x.name, 120), p_business: cleanText(x.business, 160), p_email: cleanText(x.email, 200).toLowerCase(),
+          p_phone: cleanPhone(x.phone), p_need: cleanText(x.need, 160), p_message: String(x.message || "").trim().slice(0, 2000), p_source: cleanText(x.source || "Website", 60) };
+        var withLang = Object.assign({ p_lang: ["en", "tl", "ceb"].indexOf(x.lang) >= 0 ? x.lang : "en" }, a);
+        // v2 also saves the visitor's language (used for the automatic reply email)
+        return c.rpc("submit_inquiry_v2", withLang).then(function (res) { return res.error && /submit_inquiry_v2|function/i.test(res.error.message || "") ? c.rpc("submit_inquiry", a) : res; })
+          .then(function (res) { return q(Promise.resolve(res)); })
           .then(function (id) { return { id: id }; });
       });
     },

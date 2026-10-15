@@ -1537,7 +1537,7 @@ dialog.inq-modal::backdrop{background:rgba(11,22,35,.5)}
     if(!email&&!ph){err.textContent=t('errContact');err.hidden=false;f.email.focus();return}
     if(ph&&!/^9\d{9}$/.test(ph)){err.textContent=t('errPhone');err.hidden=false;f.phone.focus();return}
     var btn=form.querySelector('button[type=submit]');btn.disabled=true;
-    PT.submitInquiry({name:name,business:f.business.value,email:email,phone:ph,need:f.need.value,message:f.message.value,source:source}).then(function(){
+    PT.submitInquiry({name:name,business:f.business.value,email:email,phone:ph,need:f.need.value,message:f.message.value,source:source,lang:document.documentElement.getAttribute('lang')||'en'}).then(function(){
       btn.disabled=false;form.reset();show('done');document.getElementById('inqDoneClose').focus();
     }).catch(function(){btn.disabled=false;err.textContent=t('errSave');err.hidden=false});
   });

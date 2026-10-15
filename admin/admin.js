@@ -674,7 +674,7 @@
     var detail = !q ? '<aside class="card detail"><div class="empty">Select an inquiry.</div></aside>' :
       '<aside class="card detail" aria-label="Inquiry details"><div class="detail-head"><span class="av">' + esc(initials(q.business || q.name)) + '</span><span style="display:grid;gap:4px;min-width:0"><b>' + esc(q.business || q.name) + "</b>" + pill(IST, q.status) + "</span></div>" +
       '<dl class="facts"><dt>Contact</dt><dd>' + esc(q.name) + "</dd>" + (q.email ? '<dt>Email</dt><dd><a href="mailto:' + esc(q.email) + '">' + esc(q.email) + "</a></dd>" : "") +
-      (q.phone ? "<dt>Mobile</dt><dd>" + esc(fullPhone(q.phone)) + "</dd>" : "") + "<dt>Needs</dt><dd>" + esc(q.need || "—") + "</dd><dt>From</dt><dd>" + esc(q.source) + "</dd><dt>Received</dt><dd>" + esc(fmtDT(q.created_at)) + "</dd></dl>" +
+      (q.phone ? "<dt>Mobile</dt><dd>" + esc(fullPhone(q.phone)) + "</dd>" : "") + "<dt>Needs</dt><dd>" + esc(q.need || "—") + "</dd><dt>From</dt><dd>" + esc(q.source) + "</dd><dt>Received</dt><dd>" + esc(fmtDT(q.created_at)) + "</dd>" + (q.email ? "<dt>Auto-reply</dt><dd>" + esc(autoReplyText(q)) + "</dd>" : "") + "</dl>" +
       (q.message ? '<div class="msg">' + esc(q.message) + "</div>" : "") +
       field(lbl("istatus", "Stage"), '<select class="input" id="istatus">' + ITABS.slice(0, 5).map(function (t) { return opt(t[0], t[1], q.status); }).join("") + "</select>") +
       field(lbl("inotes", "Notes"), '<textarea class="input" id="inotes" rows="4" placeholder="Calls, quotes, next steps">' + esc(q.notes || "") + "</textarea>") +
@@ -882,6 +882,22 @@
         : '<button class="btn btn-p" type="submit" name="to" value="open">Open checkout</button><button class="btn btn-g" type="submit" name="to" value="save">Save message</button>') +
       "</div></form>";
   }
+  function autoReplyText(q) {
+    var st = String(q.autoreply_status || "");
+    if (st === "sent" && q.autoreply_sent_at) return "Sent " + fmtDT(q.autoreply_sent_at) + " (" + ({ tl: "Tagalog", ceb: "Bisaya" }[q.lang] || "English") + ")";
+    if (st === "sending") return "Sending…";
+    if (st === "off") return "Not sent (auto-reply was off)";
+    if (st === "skipped (limit)") return "Not sent (this address already got one today)";
+    if (/^failed/.test(st)) return "Failed: " + st.replace(/^failed:\s*/, "");
+    return st || "Not sent";
+  }
+  function inquiryReplyCard() {
+    var on = (setting("inquiry_reply") || {}).enabled !== false;
+    return '<form class="card" data-form="inquiry_reply" novalidate><h2>Inquiry auto-reply</h2>' +
+      '<p>When someone sends a message from <b>Talk to Our Team</b> or <b>Discuss Your Business Idea</b>, they get an instant “We got your message” email in the language they used on the site, saying your team will reply within 1 business day. Each inquiry shows whether it was sent.</p><div class="form-grid">' +
+      '<label class="span2" style="display:flex;gap:10px;align-items:center;font-weight:600"><input type="checkbox" name="enabled"' + (on ? " checked" : "") + ' style="width:18px;height:18px;accent-color:var(--btn)"> Send the automatic reply</label>' +
+      '</div><div class="save-row"><button class="btn btn-p" type="submit">Save auto-reply</button></div></form>';
+  }
   function remindersCard() {
     var r = setting("reminders") || {}, on = r.enabled !== false, mins = Number(r.minutes) || 15;
     return '<form class="card" data-form="reminders" novalidate><h2>Reminder emails</h2>' +
@@ -932,7 +948,7 @@
       field(lbl("refund", "Money-back guarantee (days)"), '<input class="input" id="refund" name="refund_days" type="number" min="0" max="60" value="' + esc(setting("refund_days")) + '">') +
       '<div class="span2">' + field(lbl("bonuses", "Bonuses included (one per line)"), '<textarea class="input" id="bonuses" name="bonuses" rows="4">' + esc((setting("bonuses") || []).join("\n")) + "</textarea>", "Listed in the checkout order summary.") + "</div>" +
       '</div><div class="save-row"><button class="btn btn-p" type="submit">Save rules</button></div></form>' +
-      remindersCard() +
+      remindersCard() + inquiryReplyCard() +
       hubOfferCard() +
       pmCard(demo) +
       '<section class="card"><h2>Zoom link emails</h2><p>When you mark someone as paid (or add a paid walk-in), the Zoom link of their batch is emailed to them in the language they used at checkout. Add the link in <a href="#/workshops">Workshops → Edit</a>.</p>' +
@@ -1159,6 +1175,10 @@
       var cur = checkoutSetting(), to = (e.submitter && e.submitter.value) || "save";
       var next = { open: to === "open" ? true : to === "close" ? false : cur.open !== false, message: String(f.elements.message.value || "").trim().slice(0, 300) };
       act(PT.admin.saveSettings({ checkout: next }), to === "close" ? "Checkout closed: no new reservations" : to === "open" ? "Checkout open: people can reserve again" : "Message saved");
+      return;
+    }
+    if (f.getAttribute("data-form") === "inquiry_reply") {
+      act(PT.admin.saveSettings({ inquiry_reply: { enabled: f.elements.enabled.checked } }), f.elements.enabled.checked ? "Inquiry auto-reply is on" : "Inquiry auto-reply turned off");
       return;
     }
     if (f.getAttribute("data-form") === "reminders") {
