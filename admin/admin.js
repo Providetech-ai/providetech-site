@@ -501,11 +501,11 @@
       return;
     }
     var extra = [];
-    if (pend) extra.push(pend + " unpaid reservation" + (pend === 1 ? "" : "s"));
-    if (canc) extra.push(canc + " cancelled reservation" + (canc === 1 ? "" : "s"));
+    if (pend) extra.push(pend + " unpaid booking" + (pend === 1 ? "" : "s"));
+    if (canc) extra.push(canc + " cancelled booking" + (canc === 1 ? "" : "s"));
     openModal("Delete " + s.code + "?", '<p style="margin:0"><b>' + esc(s.title) + "</b>" + esc(when) + "</p>" +
       '<p style="margin:12px 0 0">This permanently removes the batch' + (extra.length ? " and its " + esc(extra.join(" and ")) : "") + ". It can't be undone.</p>" +
-      (pend ? '<div class="callout warn" style="margin-top:12px">Someone may still be paying for an unpaid reservation. If you\'re not sure, set the batch to Draft instead.</div>' : ""),
+      (pend ? '<div class="callout warn" style="margin-top:12px">Someone may still be paying for an unpaid booking. If you\'re not sure, set the batch to Draft instead.</div>' : ""),
       { submit: "Delete batch", danger: true, onSubmit: function () { act(PT.admin.deleteSession(s.id), s.code + " deleted"); } });
   }
 
@@ -566,7 +566,7 @@
     var s = sess(r.session_id), st = RST[r.status] || [r.status, "mute"];
     var hist = (r.history || []).slice().reverse();
     var actions = "";
-    if (r.status === "pending") actions = '<button class="btn btn-p" data-act="mark-paid" data-id="' + esc(r.id) + '">Mark as paid</button><button class="btn btn-g" data-act="msg-reminder" data-id="' + esc(r.id) + '">Send payment reminder</button><button class="btn btn-danger" data-act="cancel-res" data-id="' + esc(r.id) + '">Cancel reservation</button>';
+    if (r.status === "pending") actions = '<button class="btn btn-p" data-act="mark-paid" data-id="' + esc(r.id) + '">Mark as paid</button><button class="btn btn-g" data-act="msg-reminder" data-id="' + esc(r.id) + '">Send payment reminder</button><button class="btn btn-danger" data-act="cancel-res" data-id="' + esc(r.id) + '">Cancel booking</button>';
     if (r.status === "paid") actions = (r.addon_hub && !r.hub_email_sent_at ? '<button class="btn btn-p" data-act="hub-grant" data-id="' + esc(r.id) + '">Send Builder Hub access</button>' : "") + '<button class="btn ' + (r.addon_hub && !r.hub_email_sent_at ? "btn-g" : "btn-p") + '" data-act="send-zoom" data-id="' + esc(r.id) + '">' + (fmtOf(s) === "online" ? (r.zoom_email_sent_at ? "Resend Zoom link" : "Email Zoom link") : (r.zoom_email_sent_at ? "Resend confirmation" : "Email confirmation")) + '</button><button class="btn btn-g" data-act="msg-details" data-id="' + esc(r.id) + '">Copy workshop details</button><button class="btn btn-g" data-act="move-res" data-id="' + esc(r.id) + '">Move to another batch</button><button class="btn btn-g" data-act="req-refund" data-id="' + esc(r.id) + '">Record refund request</button>';
     if (s && fmtOf(s) === "hub") actions = actions.replace(/<button[^>]*data-act="(send-zoom|msg-details)"[^>]*>[^<]*<\/button>/g, "");
     if (r.status === "refund_requested") actions = '<button class="btn btn-p" data-act="approve-refund" data-id="' + esc(r.id) + '">Approve refund · ' + peso(r.amount) + '</button><button class="btn btn-g" data-act="move-res" data-id="' + esc(r.id) + '">Offer a seat in another batch</button><button class="btn btn-g" data-act="decline-refund" data-id="' + esc(r.id) + '">Decline refund</button>';
@@ -584,7 +584,7 @@
       "<dt>Source</dt><dd>" + esc(r.source) + "</dd>" +
       (r.status === "paid" && fmtOf(s) !== "hub" ? "<dt>" + (fmtOf(s) === "online" ? "Zoom link" : "Confirmation") + "</dt><dd>" + (r.zoom_email_sent_at ? "Emailed " + esc(fmtDT(r.zoom_email_sent_at)) : s && fmtOf(s) === "online" && !s.zoom_link ? '<span class="warnTxt">Batch has no Zoom link yet</span>' : '<span class="warnTxt">Not sent yet</span>') + "</dd>" : "") + "</dl>" +
       (r.status === "refund_requested" ? '<div class="callout warn">Reason: “' + esc(r.refund_reason || "No reason given") + "”. Guarantee window ends " + esc(fmtDay(refundDeadline(r))) + ".</div>" : "") +
-      (holdExpired(r) ? '<div class="callout warn">Unpaid, and the seat hold ended ' + esc(fmtDT(holdEnd(r).toISOString())) + ". The seat is free for others again. They can still finish paying by reserving again with the same email and mobile number, or you can cancel this.</div>" : "") +
+      (holdExpired(r) ? '<div class="callout warn">Unpaid, and the seat hold ended ' + esc(fmtDT(holdEnd(r).toISOString())) + ". The seat is free for others again. They can still finish paying by booking again with the same email and mobile number, or you can cancel this.</div>" : "") +
       '<div style="display:grid;gap:10px"><span class="mono-label">History</span><ol class="timeline">' +
       hist.map(function (h) { return '<li><span class="dot"></span><span><b>' + esc(h.text) + "</b><small>" + esc(fmtDT(h.at)) + "</small></span></li>"; }).join("") + "</ol></div>" +
       '<div class="field"><label for="rnotes">Notes</label><textarea class="input" id="rnotes" rows="3" placeholder="Private notes for your team">' + esc(r.notes || "") + '</textarea><button class="btn btn-g btn-sm" style="justify-self:start" data-act="save-notes" data-id="' + esc(r.id) + '">Save notes</button></div>' +
@@ -596,10 +596,10 @@
     var s = sess(r.session_id) || {}, link = payLink(r);
     var holdUntil = holdEnd(r);
     var text = kind === "reminder"
-      ? "Hi " + firstName(r.name) + ", this is PROVIDETECH AI ASSISTANCE. Your seat in the " + s.title + " (" + s.code + ", " + fmtLong(s.date) + ") is reserved, but we haven't received your " + peso(r.amount) + " payment yet.\n\nYou can pay here: " + link + "\n\nWe'll hold your seat until " + fmtDT(holdUntil.toISOString()) + ". Thank you!"
+      ? "Hi " + firstName(r.name) + ", this is PROVIDETECH AI ASSISTANCE. Your seat in the " + s.title + " (" + s.code + ", " + fmtLong(s.date) + ") is booked, but we haven't received your " + peso(r.amount) + " payment yet.\n\nYou can pay here: " + link + "\n\nWe'll hold your seat until " + fmtDT(holdUntil.toISOString()) + ". Thank you!"
       : fmtOf(s) === "home" ? "Hi " + firstName(r.name) + ", your 1-on-1 coaching with PROVIDETECH is booked.\n\nWe'll visit you at: " + (r.address || "[address]") + (r.schedule_pref ? "\nYour preferred time: " + r.schedule_pref : "") + "\n\nWe'll confirm the exact date and time with you. Please have your laptop ready. See you soon!\n— PROVIDETECH AI ASSISTANCE"
       : "Hi " + firstName(r.name) + ", you're all set for the " + s.title + " on " + fmtLong(s.date) + (s.time_label ? ", " + s.time_label : "") + ".\n\nWhere: " + (s.venue || "[Venue or meeting link]") + "\n\nPlease join 15 minutes early and bring a laptop. See you there!\n— PROVIDETECH AI ASSISTANCE";
-    var subject = kind === "reminder" ? "Complete your workshop reservation" : "Your workshop details — " + s.code;
+    var subject = kind === "reminder" ? "Complete your workshop booking" : "Your workshop details — " + s.code;
     openModal(kind === "reminder" ? "Payment reminder" : "Workshop details",
       '<p class="muted" style="margin:0">To ' + esc(r.name) + " · " + esc(r.email) + " · " + esc(fullPhone(r.phone)) + "</p>" +
       field(lbl("mtext", "Message"), '<textarea class="input" id="mtext" name="text" rows="9">' + esc(text) + "</textarea>", "Edit it if you like, then send it by email, text or Messenger.") +
@@ -1186,8 +1186,8 @@
       case "msg-reminder": messageModal(findRes(id), "reminder"); break;
       case "msg-details": messageModal(findRes(id), "details"); break;
       case "cancel-res": r = findRes(id);
-        openModal("Cancel " + r.name + "’s reservation?", '<p style="margin:0">Their seat goes back to the batch. They haven’t paid, so there’s nothing to refund.</p>' + field(lbl("creason", "Reason (optional)"), '<input class="input" id="creason" name="reason" placeholder="e.g. No payment after reminder">'),
-          { submit: "Cancel reservation", danger: true, onSubmit: function (f) { act(PT.admin.updateReservation(r.id, { status: "cancelled" }, "Reservation cancelled" + (f.reason.trim() ? ": " + f.reason.trim() : "")), "Reservation cancelled"); } });
+        openModal("Cancel " + r.name + "’s booking?", '<p style="margin:0">Their seat goes back to the batch. They haven’t paid, so there’s nothing to refund.</p>' + field(lbl("creason", "Reason (optional)"), '<input class="input" id="creason" name="reason" placeholder="e.g. No payment after reminder">'),
+          { submit: "Cancel booking", danger: true, onSubmit: function (f) { act(PT.admin.updateReservation(r.id, { status: "cancelled" }, "Booking cancelled" + (f.reason.trim() ? ": " + f.reason.trim() : "")), "Booking cancelled"); } });
         break;
       case "move-res": r = findRes(id);
         var targets = upcoming().filter(function (s) { return s.id !== r.session_id && (s.status === "open" || s.status === "draft"); });
