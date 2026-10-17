@@ -78,8 +78,6 @@ Deno.serve(async (req) => {
   if (!items.length) return json({ error: "EMPTY", message: "Nothing to pay for." }, 400);
   const what = group.map((x) => { const xs = sessById[x.session_id]; return xs.format === "hub" ? "Builder Hub" : xs.format === "home" ? "1-on-1" : xs.code; }).join(" + ");
   const fmts = [...new Set(group.map((x) => sessById[x.session_id].format || "online"))].join(",");
-  const all = ["gcash", "card", "qrph"];
-  const first = all.includes(r.method) ? r.method : "gcash";
   const attrs = (methods: string[]) => ({
     data: {
       attributes: {
@@ -97,9 +95,10 @@ Deno.serve(async (req) => {
       },
     },
   });
-  // Offer all three methods (their choice first). If PayMongo hasn't activated some of them yet,
-  // try smaller sets until one works: their choice alone, then QR Ph (works with GCash, Maya and bank apps).
-  const tries = [[first, ...all.filter((m) => m !== first)], [first], ["qrph"], ...all.filter((m) => m !== first && m !== "qrph").map((m) => [m])];
+  // QR Ph only (works with GCash, Maya and bank apps, and avoids app-switch / card-verification steps
+  // that often break inside Facebook's in-app browser). If PayMongo refuses QR Ph, fall back to the
+  // other methods so nobody gets stuck.
+  const tries = [["qrph"], ["gcash", "card"], ["gcash"], ["card"]];
   let res = await pm("/checkout_sessions", "POST", attrs(tries[0]));
   for (let i = 1; i < tries.length && !res.ok && res.status === 400; i++) {
     if (i > 1 && tries.slice(0, i).some((t) => t.length === 1 && t[0] === tries[i][0])) continue;
