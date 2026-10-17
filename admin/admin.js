@@ -596,7 +596,7 @@
     var s = sess(r.session_id) || {}, link = payLink(r);
     var holdUntil = holdEnd(r);
     var text = kind === "reminder"
-      ? "Hi " + firstName(r.name) + ", this is PROVIDETECH AI ASSISTANCE. Your seat in the " + s.title + " (" + s.code + ", " + fmtLong(s.date) + "), but we haven't received your " + peso(r.amount) + " payment yet, so your seat isn't confirmed.\n\nYou can pay here: " + link + "\n\nWe'll hold your seat until " + fmtDT(holdUntil.toISOString()) + ". Thank you!"
+      ? "Hi " + firstName(r.name) + ", this is PROVIDETECH AI ASSISTANCE. You started signing up for the " + s.title + " (" + s.code + ", " + fmtLong(s.date) + "), but we haven't received your " + peso(r.amount) + " payment yet, so your seat isn't confirmed.\n\nYou can pay here: " + link + "\n\nWe'll keep a seat for you until " + fmtDT(holdUntil.toISOString()) + ". Thank you!"
       : fmtOf(s) === "home" ? "Hi " + firstName(r.name) + ", your 1-on-1 coaching with PROVIDETECH is booked.\n\nWe'll visit you at: " + (r.address || "[address]") + (r.schedule_pref ? "\nYour preferred time: " + r.schedule_pref : "") + "\n\nWe'll confirm the exact date and time with you. Please have your laptop ready. See you soon!\n— PROVIDETECH AI ASSISTANCE"
       : "Hi " + firstName(r.name) + ", you're all set for the " + s.title + " on " + fmtLong(s.date) + (s.time_label ? ", " + s.time_label : "") + ".\n\nWhere: " + (s.venue || "[Venue or meeting link]") + "\n\nPlease join 15 minutes early and bring a laptop. See you there!\n— PROVIDETECH AI ASSISTANCE";
     var subject = kind === "reminder" ? "Complete your workshop booking" : "Your workshop details — " + s.code;
