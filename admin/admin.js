@@ -261,11 +261,11 @@
   /* -------------------------------------------------------------- overview */
   function viewOverview() {
     var d = D(), now = Date.now(), day = 86400000;
-    var last30 = 0, prev30 = 0, hub30 = 0, hubN30 = 0, seats30 = 0, methods = { gcash: 0, card: 0, qrph: 0, other: 0 }, payCount = 0;
+    var last30 = 0, prev30 = 0, hub30 = 0, hubN30 = 0, seats30 = 0, paid30 = 0, methods = { gcash: 0, card: 0, qrph: 0, other: 0 }, payCount = 0;
     d.reservations.forEach(function (r) {
       if (paidIn(r, now - 30 * day, now + day)) { last30 += wsAmt(r); if (hubAmt(r)) { hub30 += hubAmt(r); hubN30++; } payCount++; methods[methods.hasOwnProperty(r.method) ? r.method : "other"]++; }
       if (paidIn(r, now - 60 * day, now - 30 * day)) prev30 += wsAmt(r);
-      if (new Date(r.created_at).getTime() > now - 30 * day && r.status !== "cancelled") seats30++;
+      if (new Date(r.created_at).getTime() > now - 30 * day && r.status !== "cancelled") { seats30++; if (r.status === "paid") paid30++; }
     });
     var change = prev30 ? Math.round((last30 - prev30) / prev30 * 100) : null;
     var nx = nextSession(), ns = nx ? stats(nx) : null;
@@ -276,7 +276,7 @@
       '<div class="card kpi"><span class="label">Workshop revenue · last 30 days</span><span class="value">' + peso(last30) + "</span>" +
       '<span class="sub">' + (change === null ? "No sales in the previous 30 days" : '<span class="' + (change >= 0 ? "up" : "down") + '">' + (change >= 0 ? "▲ " : "▼ ") + Math.abs(change) + "%</span> vs previous 30 days") + "</span>" +
       '<span class="sub">Builder Hub, tracked separately: <a href="#/hub">' + peso(hub30) + " · " + hubN30 + (hubN30 === 1 ? " member" : " members") + "</a></span></div>" +
-      '<div class="card kpi"><span class="label">Seats reserved · last 30 days</span><span class="value">' + seats30 + '</span><span class="sub">Across all batches</span></div>' +
+      '<div class="card kpi"><span class="label">Seats paid · last 30 days</span><span class="value">' + paid30 + '</span><span class="sub">' + (seats30 - paid30) + ' more booked, not paid yet</span></div>' +
       (nx ? '<div class="card kpi"><span class="label">Seats left · ' + esc(nx.code) + '</span><span class="value">' + ns.left + " <small>of " + nx.capacity + "</small></span>" +
         '<span class="sub ' + (ns.left / nx.capacity <= .25 ? "warnTxt" : "") + '">' + (ns.left === 0 ? "Full" : ns.left / nx.capacity <= .25 ? "Almost full" : "Open") + " · " + (daysUntil(nx.date) === 0 ? "today" : daysUntil(nx.date) + " days to go") + "</span></div>"
         : '<div class="card kpi"><span class="label">Next workshop</span><span class="value">—</span><span class="sub"><a href="#/workshops">Open a batch</a> to start taking reservations</span></div>') +
@@ -549,7 +549,7 @@
 
     var list = '<section class="card list" aria-label="Participant list" style="padding:16px 18px 12px"><div class="toolbar">' + tabs +
       '<div class="search">' + I.search + '<label for="psearch" class="sr-only">Search by name, email, phone or reference</label><input id="psearch" type="search" placeholder="Search name, email, phone" data-model="p.q" value="' + esc(S.p.q) + '"></div></div>' +
-      (rows.length ? '<div class="table-wrap"><table class="t"><thead><tr><th>Participant</th><th>Payment</th><th>Status</th><th>Reserved</th></tr></thead><tbody>' +
+      (rows.length ? '<div class="table-wrap"><table class="t"><thead><tr><th>Participant</th><th>Payment</th><th>Status</th><th>Booked</th></tr></thead><tbody>' +
         rows.map(function (r) {
           return '<tr class="click' + (r.id === S.p.sel ? " sel" : "") + '" data-act="psel" data-id="' + esc(r.id) + '" aria-selected="' + (r.id === S.p.sel) + '">' +
             '<td><span class="who"><span class="av">' + esc(initials(r.name)) + "</span><span><b>" + esc(r.name) + "</b><small>" + esc(r.email) + "</small></span></span></td>" +
@@ -612,7 +612,7 @@
   }
   function exportCsv() {
     var s = sess(S.p.batch), rows = pRows();
-    var head = ["Name", "Email", "Mobile", "Batch", "Workshop date", "Method", "Status", "Reference", "Amount", "Reserved at", "Paid at", "Source", "Notes"];
+    var head = ["Name", "Email", "Mobile", "Batch", "Workshop date", "Method", "Status", "Reference", "Amount", "Booked at", "Paid at", "Source", "Notes"];
     var lines = [head].concat(rows.map(function (r) {
       return [r.name, r.email, fullPhone(r.phone), s.code, s.date, METHOD[r.method] || r.method, (RST[r.status] || [r.status])[0], r.ref, r.amount, r.created_at, r.paid_at || "", r.source, r.notes];
     })).map(function (row) {

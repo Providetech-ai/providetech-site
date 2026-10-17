@@ -68,7 +68,7 @@ begin
   if public.booking_closed(s.format, s.date, s.time_label) then raise exception 'BOOKING_CLOSED'; end if;
   if s.format = 'home' and char_length(v_addr) < 8 then raise exception 'ADDRESS'; end if;
   if s.format <> 'home' then v_addr := ''; v_pref := ''; end if;
-  v_what := case s.format when 'home' then '1-on-1 coaching booked on website' when 'f2f' then 'Face-to-face seat reserved on website' else 'Seat reserved on website' end;
+  v_what := case s.format when 'home' then '1-on-1 coaching booked on website (not paid yet)' when 'f2f' then 'Face-to-face booking on website (not paid yet)' else 'Booked on website (not paid yet)' end;
 
   select * into prev from public.reservations r
    where r.session_id = s.id and lower(r.email) = lower(trim(p_email))
