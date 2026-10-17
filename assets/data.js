@@ -112,7 +112,7 @@
         status: status, source: (extra && extra.source) || sources[Math.floor(rnd() * sources.length)],
         ref: status === "pending" ? "" : ref(m), amount: session.price, notes: "", refund_reason: (extra && extra.reason) || "",
         created_at: created, paid_at: status === "pending" ? null : created, lang: "en", zoom_email_sent_at: status === "pending" ? null : created,
-        history: [{ at: created, text: "Booked on website" }]
+        history: [{ at: created, text: "Checkout started — waiting for payment" }]
       };
       if (status !== "pending") r.history.push({ at: created, text: "Payment confirmed · " + ({ gcash: "GCash", card: "Credit Card", qrph: "QR Ph (bank)" })[m] }, { at: created, text: "Zoom link emailed to " + r.email });
       if (status === "refund_requested") r.history.push({ at: at(Math.max(daysAgo - 2, 0), 18, 5), text: "Refund requested: " + r.refund_reason });
@@ -244,7 +244,7 @@
         id: uid(), session_id: s.id, name: cleanText(r.name, 120), email: cleanText(r.email, 200).toLowerCase(), phone: cleanPhone(r.phone),
         method: r.method, status: "pending", source: cleanText(r.source || "Website", 60), ref: "", amount: s.price + hubAddonPrice(d, r.addon), notes: "",
         addon_hub: hubAddonPrice(d, r.addon) > 0, addon_amount: hubAddonPrice(d, r.addon), hold_until: new Date(Date.now() + (Number(d.settings.hold_hours) || 1) * 3600000).toISOString(),
-        refund_reason: "", lang: cleanLang(r.lang), address: addr, schedule_pref: pref, zoom_email_sent_at: null, created_at: created, paid_at: null, history: [{ at: created, text: home ? "1-on-1 coaching booked on website" : "Booked on website" }]
+        refund_reason: "", lang: cleanLang(r.lang), address: addr, schedule_pref: pref, zoom_email_sent_at: null, created_at: created, paid_at: null, history: [{ at: created, text: home ? "1-on-1 coaching checkout started — waiting for payment" : "Checkout started — waiting for payment" }]
       };
       d.reservations.push(row); save(d);
       return later({ id: row.id });

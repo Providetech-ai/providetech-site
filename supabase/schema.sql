@@ -212,7 +212,7 @@ begin
   values (s.id, left(trim(p_name), 120), lower(left(trim(p_email), 200)), p_phone, p_method, 'pending',
           left(coalesce(nullif(trim(p_source), ''), 'Website'), 60), s.price,
           case when p_lang in ('en','tl','ceb') then p_lang else 'en' end, hold,
-          jsonb_build_array(jsonb_build_object('at', now(), 'text', 'Booked on website')))
+          jsonb_build_array(jsonb_build_object('at', now(), 'text', 'Checkout started — waiting for payment')))
   returning id into new_id;
   return new_id;
 end;
@@ -402,7 +402,7 @@ begin
           left(coalesce(nullif(trim(p_source), ''), 'Website'), 60), s.price + coalesce(v_addon_price, 0),
           v_want, coalesce(v_addon_price, 0), v_lang, v_hold,
           jsonb_build_array(jsonb_build_object('at', now(), 'text',
-            'Booked on website' || case when v_want then ' · with Builder Hub (₱' || v_addon_price || ')' else '' end)))
+            'Checkout started — waiting for payment' || case when v_want then ' · with Builder Hub (₱' || v_addon_price || ')' else '' end)))
   returning id into new_id;
   return new_id;
 end;
@@ -765,7 +765,7 @@ begin
   if not found or s.status <> 'open' or s.date < current_date then raise exception 'CLOSED'; end if;
   if s.format = 'home' and char_length(v_addr) < 8 then raise exception 'ADDRESS'; end if;
   if s.format <> 'home' then v_addr := ''; v_pref := ''; end if;
-  v_what := case s.format when 'home' then '1-on-1 coaching booked on website' when 'f2f' then 'Face-to-face booked on website' else 'Booked on website' end;
+  v_what := case s.format when 'home' then '1-on-1 coaching checkout started — waiting for payment' when 'f2f' then 'Face-to-face checkout started — waiting for payment' else 'Checkout started — waiting for payment' end;
 
   select * into prev from public.reservations r
    where r.session_id = s.id and lower(r.email) = lower(trim(p_email))

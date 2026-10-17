@@ -276,7 +276,7 @@
       '<div class="card kpi"><span class="label">Workshop revenue · last 30 days</span><span class="value">' + peso(last30) + "</span>" +
       '<span class="sub">' + (change === null ? "No sales in the previous 30 days" : '<span class="' + (change >= 0 ? "up" : "down") + '">' + (change >= 0 ? "▲ " : "▼ ") + Math.abs(change) + "%</span> vs previous 30 days") + "</span>" +
       '<span class="sub">Builder Hub, tracked separately: <a href="#/hub">' + peso(hub30) + " · " + hubN30 + (hubN30 === 1 ? " member" : " members") + "</a></span></div>" +
-      '<div class="card kpi"><span class="label">Seats paid · last 30 days</span><span class="value">' + paid30 + '</span><span class="sub">' + (seats30 - paid30) + ' more booked, not paid yet</span></div>' +
+      '<div class="card kpi"><span class="label">Seats paid · last 30 days</span><span class="value">' + paid30 + '</span><span class="sub">' + (seats30 - paid30) + ' started checkout, not paid yet</span></div>' +
       (nx ? '<div class="card kpi"><span class="label">Seats left · ' + esc(nx.code) + '</span><span class="value">' + ns.left + " <small>of " + nx.capacity + "</small></span>" +
         '<span class="sub ' + (ns.left / nx.capacity <= .25 ? "warnTxt" : "") + '">' + (ns.left === 0 ? "Full" : ns.left / nx.capacity <= .25 ? "Almost full" : "Open") + " · " + (daysUntil(nx.date) === 0 ? "today" : daysUntil(nx.date) + " days to go") + "</span></div>"
         : '<div class="card kpi"><span class="label">Next workshop</span><span class="value">—</span><span class="sub"><a href="#/workshops">Open a batch</a> to start taking reservations</span></div>') +
@@ -549,7 +549,7 @@
 
     var list = '<section class="card list" aria-label="Participant list" style="padding:16px 18px 12px"><div class="toolbar">' + tabs +
       '<div class="search">' + I.search + '<label for="psearch" class="sr-only">Search by name, email, phone or reference</label><input id="psearch" type="search" placeholder="Search name, email, phone" data-model="p.q" value="' + esc(S.p.q) + '"></div></div>' +
-      (rows.length ? '<div class="table-wrap"><table class="t"><thead><tr><th>Participant</th><th>Payment</th><th>Status</th><th>Booked</th></tr></thead><tbody>' +
+      (rows.length ? '<div class="table-wrap"><table class="t"><thead><tr><th>Participant</th><th>Payment</th><th>Status</th><th>Submitted</th></tr></thead><tbody>' +
         rows.map(function (r) {
           return '<tr class="click' + (r.id === S.p.sel ? " sel" : "") + '" data-act="psel" data-id="' + esc(r.id) + '" aria-selected="' + (r.id === S.p.sel) + '">' +
             '<td><span class="who"><span class="av">' + esc(initials(r.name)) + "</span><span><b>" + esc(r.name) + "</b><small>" + esc(r.email) + "</small></span></span></td>" +
@@ -596,7 +596,7 @@
     var s = sess(r.session_id) || {}, link = payLink(r);
     var holdUntil = holdEnd(r);
     var text = kind === "reminder"
-      ? "Hi " + firstName(r.name) + ", this is PROVIDETECH AI ASSISTANCE. Your seat in the " + s.title + " (" + s.code + ", " + fmtLong(s.date) + ") is booked, but we haven't received your " + peso(r.amount) + " payment yet.\n\nYou can pay here: " + link + "\n\nWe'll hold your seat until " + fmtDT(holdUntil.toISOString()) + ". Thank you!"
+      ? "Hi " + firstName(r.name) + ", this is PROVIDETECH AI ASSISTANCE. Your seat in the " + s.title + " (" + s.code + ", " + fmtLong(s.date) + "), but we haven't received your " + peso(r.amount) + " payment yet, so your seat isn't confirmed.\n\nYou can pay here: " + link + "\n\nWe'll hold your seat until " + fmtDT(holdUntil.toISOString()) + ". Thank you!"
       : fmtOf(s) === "home" ? "Hi " + firstName(r.name) + ", your 1-on-1 coaching with PROVIDETECH is booked.\n\nWe'll visit you at: " + (r.address || "[address]") + (r.schedule_pref ? "\nYour preferred time: " + r.schedule_pref : "") + "\n\nWe'll confirm the exact date and time with you. Please have your laptop ready. See you soon!\n— PROVIDETECH AI ASSISTANCE"
       : "Hi " + firstName(r.name) + ", you're all set for the " + s.title + " on " + fmtLong(s.date) + (s.time_label ? ", " + s.time_label : "") + ".\n\nWhere: " + (s.venue || "[Venue or meeting link]") + "\n\nPlease join 15 minutes early and bring a laptop. See you there!\n— PROVIDETECH AI ASSISTANCE";
     var subject = kind === "reminder" ? "Complete your workshop booking" : "Your workshop details — " + s.code;
@@ -612,7 +612,7 @@
   }
   function exportCsv() {
     var s = sess(S.p.batch), rows = pRows();
-    var head = ["Name", "Email", "Mobile", "Batch", "Workshop date", "Method", "Status", "Reference", "Amount", "Booked at", "Paid at", "Source", "Notes"];
+    var head = ["Name", "Email", "Mobile", "Batch", "Workshop date", "Method", "Status", "Reference", "Amount", "Submitted at", "Paid at", "Source", "Notes"];
     var lines = [head].concat(rows.map(function (r) {
       return [r.name, r.email, fullPhone(r.phone), s.code, s.date, METHOD[r.method] || r.method, (RST[r.status] || [r.status])[0], r.ref, r.amount, r.created_at, r.paid_at || "", r.source, r.notes];
     })).map(function (row) {
