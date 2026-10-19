@@ -48,12 +48,23 @@ Deno.serve(async (req) => {
   const sessById: Record<string, any> = Object.fromEntries((sessRows || []).map((x: any) => [x.id, x]));
   const s = sessById[r.session_id];
   if (!s || group.some((x) => !sessById[x.session_id])) return json({ error: "NOT_FOUND", message: "Batch not found." }, 404);
+  // Don't take money for a session that has already closed (e.g. an old follow-up email link)
+  for (const xs of Object.values(sessById)) {
+    if (!["open", "full"].includes(xs.status)) return json({ error: "CLOSED", message: "This session is no longer open." }, 409);
+    if (xs.format !== "hub") {
+      const { data: closed } = await db.rpc("booking_closed", { p_format: xs.format, p_date: xs.date, p_label: xs.time_label });
+      const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+      if (closed === true || String(xs.date) < today) return json({ error: "CLOSED", message: "Registration for this session has closed." }, 409);
+    }
+  }
 
   // Reuse an open checkout so refreshing the page doesn't create duplicates
   if (r.pm_checkout_id) {
     const cur = await pm(`/checkout_sessions/${encodeURIComponent(r.pm_checkout_id)}`);
     const a = cur.data?.attributes;
-    if (cur.ok && a?.status === "active" && a?.checkout_url) return json({ ok: true, checkout_url: a.checkout_url, reused: true });
+    // Only reuse it if it offers QR Ph (older checkouts were GCash/Card only)
+    const methods: string[] = Array.isArray(a?.payment_method_types) ? a.payment_method_types : [];
+    if (cur.ok && a?.status === "active" && a?.checkout_url && methods.includes("qrph")) return json({ ok: true, checkout_url: a.checkout_url, reused: true });
   }
 
   const site = siteFrom(req, body);

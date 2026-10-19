@@ -900,6 +900,15 @@
       '<label class="span2" style="display:flex;gap:10px;align-items:center;font-weight:600"><input type="checkbox" name="enabled"' + (on ? " checked" : "") + ' style="width:18px;height:18px;accent-color:var(--btn)"> Send the automatic reply</label>' +
       '</div><div class="save-row"><button class="btn btn-p" type="submit">Save auto-reply</button></div></form>';
   }
+  function followupsCard() {
+    var r = setting("followups") || {}, on = r.enabled === true, h1 = Number(r.first_hours) || 1, h2 = Number(r.second_hours) || 24;
+    return '<form class="card" data-form="followups" novalidate><h2>Payment follow-ups</h2>' +
+      '<p>When someone starts checkout but doesn\u2019t pay, they get a friendly “Still want to join?” email with their order and a Pay button that opens a fresh QR Ph page, in their language. At most <b>2 emails</b>: the first after the delay below, the second (“last reminder”) a while later. They stop as soon as the person pays, the booking is cancelled, or registration for that session closes. Each email shows in the person\u2019s history.</p><div class="form-grid">' +
+      '<label class="span2" style="display:flex;gap:10px;align-items:center;font-weight:600"><input type="checkbox" name="enabled"' + (on ? " checked" : "") + ' style="width:18px;height:18px;accent-color:var(--btn)"> Send payment follow-up emails</label>' +
+      field(lbl("fu-1", "First email after (hours)"), '<input class="input" id="fu-1" name="first_hours" type="number" min="0.25" max="72" step="0.25" value="' + esc(h1) + '">', "Counted from when they started checkout.") +
+      field(lbl("fu-2", "Last reminder after (hours)"), '<input class="input" id="fu-2" name="second_hours" type="number" min="1" max="168" step="1" value="' + esc(h2) + '">', "Counted from the first email.") +
+      '</div><div class="save-row"><button class="btn btn-p" type="submit">Save follow-ups</button></div></form>';
+  }
   function remindersCard() {
     var r = setting("reminders") || {}, on = r.enabled !== false, mins = Number(r.minutes) || 15;
     return '<form class="card" data-form="reminders" novalidate><h2>Reminder emails</h2>' +
@@ -950,7 +959,7 @@
       field(lbl("refund", "Money-back guarantee (days)"), '<input class="input" id="refund" name="refund_days" type="number" min="0" max="60" value="' + esc(setting("refund_days")) + '">') +
       '<div class="span2">' + field(lbl("bonuses", "Bonuses included (one per line)"), '<textarea class="input" id="bonuses" name="bonuses" rows="4">' + esc((setting("bonuses") || []).join("\n")) + "</textarea>", "Listed in the checkout order summary.") + "</div>" +
       '</div><div class="save-row"><button class="btn btn-p" type="submit">Save rules</button></div></form>' +
-      remindersCard() + inquiryReplyCard() +
+      remindersCard() + followupsCard() + inquiryReplyCard() +
       hubOfferCard() +
       pmCard(demo) +
       '<section class="card"><h2>Zoom link emails</h2><p>When you mark someone as paid (or add a paid walk-in), the Zoom link of their batch is emailed to them in the language they used at checkout. Add the link in <a href="#/workshops">Workshops → Edit</a>.</p>' +
@@ -1340,6 +1349,12 @@
     }
     if (f.getAttribute("data-form") === "inquiry_reply") {
       act(PT.admin.saveSettings({ inquiry_reply: { enabled: f.elements.enabled.checked } }), f.elements.enabled.checked ? "Inquiry auto-reply is on" : "Inquiry auto-reply turned off");
+      return;
+    }
+    if (f.getAttribute("data-form") === "followups") {
+      var fh1 = Number(f.elements.first_hours.value), fh2 = Number(f.elements.second_hours.value);
+      if (!(fh1 >= 0.25 && fh1 <= 72) || !(fh2 >= 1 && fh2 <= 168)) { toast("First email: 0.25–72 hours. Last reminder: 1–168 hours."); return; }
+      act(PT.admin.saveSettings({ followups: { enabled: f.elements.enabled.checked, first_hours: fh1, second_hours: fh2 } }), f.elements.enabled.checked ? "Payment follow-ups are on" : "Payment follow-ups turned off");
       return;
     }
     if (f.getAttribute("data-form") === "reminders") {
